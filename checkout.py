@@ -159,7 +159,6 @@ def get_changed_files(cmp: dircmp[Union[str, bytes]], staging_area_path) -> Iter
     start_path = os.path.join(get_directory_with_wit(Path.cwd()), '.wit', 'staging_area')
     for diff in diff_files:
         file_path = os.path.join(staging_area_path, diff)
-
         rel = os.path.relpath(file_path, start=start_path)
         yield rel
 

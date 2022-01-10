@@ -1,4 +1,3 @@
-# upload 176
 import datetime
 import filecmp
 import os
@@ -127,9 +126,9 @@ def write_references(commit_id: str, dir_with_wit: Path) -> None:
         content = ref_file.read_text().split()
         head_line = content[0]
         head_id = head_line.split('=')[1]
-        branch_data = content[1:]
+        branches_data = content[1:]
         new_content = head_line
-        for line in branch_data:
+        for line in branches_data:
             name_and_id = line.split('=')
             branch_name = name_and_id[0]
             branch_id = name_and_id[1]

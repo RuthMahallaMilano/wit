@@ -1,12 +1,11 @@
-# upload 176
 import datetime
-import filecmp
+from filecmp import dircmp
 import os
 from pathlib import Path
 import random
 import shutil
 import sys
-from typing import Any, Generator, Optional, Union
+from typing import Optional, Union, Iterator
 
 
 def init() -> None:
@@ -66,13 +65,13 @@ def commit(message: str) -> None:
 
 
 def create_commit_folder(images_path: Path) -> str:
-    folder_name = create_commit_name()
+    folder_name = create_folder_name()
     path_of_new_folder = os.path.join(images_path, folder_name)
     os.mkdir(path_of_new_folder)
     return path_of_new_folder
 
 
-def create_commit_name():
+def create_folder_name():
     length = 20
     chars = '1234567890abcdef'
     folder_name = ''.join(random.choices(chars, k=length))
@@ -112,14 +111,9 @@ def save_files(dir_with_wit: Path, path_of_new_folder: str) -> None:
             shutil.copytree(src, dst)
 
 
-# בעת הרצת פקודת commit, יתעדכן (כרגיל) ה־HEAD כך שיצביע ל־commit החדש שנוצר.
-# לפני עדכון ה־HEAD, בדקו אם ה־branch שנמצא במצב “פעיל” מצביע לאותו מקום שבו נמצא ה־HEAD.
-# אם כן, עדכנו את references.txt כך שה־branch יצביע למספר ה־commit החדש שנוצר.
-
 def write_references(commit_id: str, dir_with_wit: Path) -> None:
     wit_folder = dir_with_wit.joinpath('.wit')
     ref_file = wit_folder.joinpath('references.txt')
-    # new_branch_id = commit_id  # new_master = commit_id
     activated_path = wit_folder.joinpath('activated.txt')
     activated_branch = activated_path.read_text()
     new_content = '='.join((activated_branch, commit_id))
@@ -127,9 +121,9 @@ def write_references(commit_id: str, dir_with_wit: Path) -> None:
         content = ref_file.read_text().split()
         head_line = content[0]
         head_id = head_line.split('=')[1]
-        branch_data = content[1:]
+        branches_data = content[1:]
         new_content = head_line
-        for line in branch_data:
+        for line in branches_data:
             name_and_id = line.split('=')
             branch_name = name_and_id[0]
             branch_id = name_and_id[1]
@@ -145,118 +139,110 @@ def status() -> None:
     if not repository:
         raise WitError("<.wit> file not found")
     commit_id = get_parent_head(repository)
-    files_added_since_last_commit = get_files_added_since_last_commit(commit_id, repository)
-    files_changed_since_last_commit = get_files_changed_since_last_commit(commit_id, repository)
-    files_in_staging_area_that_dont_match_original = get_files_in_staging_area_that_dont_match_original(repository)
-    files_not_in_staging_area = get_files_not_in_staging_area(repository)
+    commit_path = os.path.join(repository, '.wit', 'images', commit_id)
+    staging_area_path = os.path.join(repository, '.wit', 'staging_area')
+    changes_to_be_committed = list(get_changes_to_be_committed(commit_path, staging_area_path))
+    changes_not_staged_for_commit = list(get_changes_not_staged_for_commit(repository, staging_area_path))
+    untracked_files = list(get_untracked_files(repository, staging_area_path))
     print(
         f"Commit id: {commit_id}\n"
-        f"Changes to be committed: {(list(files_added_since_last_commit) + list(files_changed_since_last_commit))}\n"
-        f"Changes not staged for commit: {list(files_in_staging_area_that_dont_match_original)}\n"
-        f"Untracked files: {list(files_not_in_staging_area)}"
+        f"Changes to be committed: {changes_to_be_committed}\n"
+        f"Changes not staged for commit: {changes_not_staged_for_commit}\n"
+        f"Untracked files: {untracked_files}"
     )
 
 
-def get_files_added_since_last_commit(commit_id: str, repository: Path) -> Generator[Any, Any, None]:
-    commit_path = os.path.join(repository, '.wit', 'images', commit_id)
-    staging_area_path = os.path.join(repository, '.wit', 'staging_area')
-    all_files_in_stagind_area_and_sub = get_files_of_dir_and_subdirs(staging_area_path)
-    all_files_in_commit_and_sub_dirs = get_files_of_dir_and_subdirs(commit_path)
-    for file in all_files_in_stagind_area_and_sub:
-        if file not in all_files_in_commit_and_sub_dirs:
-            yield file
-
-
-def get_files_changed_since_last_commit(commit_id: str, repository: Path) -> Generator[str, Any, None]:
-    commit_path = os.path.join(repository, '.wit', 'images', commit_id)
-    staging_area_path = os.path.join(repository, '.wit', 'staging_area')
-    all_files_in_commit_and_sub = get_all_files_in_dir_and_subs(commit_path)
-    all_files_in_staging_area_and_sub = get_all_files_in_dir_and_subs(staging_area_path)
-    yield from get_names_of_changed_files(
-        all_files_in_commit_and_sub, all_files_in_staging_area_and_sub, commit_path, staging_area_path
-    )
-
-
-def get_names_of_changed_files(
-        all_files_in_commit_and_sub: Generator[Union[bytes, str], Any, None],
-        all_files_in_staging_area_and_sub: Generator[Union[bytes, str], Any, None],
-        commit_path: Union[str, Path],
-        staging_area_path: Union[str, Path]
-) -> Generator[str, Any, None]:
-    for s_file in all_files_in_staging_area_and_sub:
-        for c_file in all_files_in_commit_and_sub:
-            if Path(s_file).relative_to(staging_area_path) == Path(c_file).relative_to(commit_path):
-                if not filecmp.cmp(s_file, c_file):
-                    yield Path(s_file).name
-
-
-def get_all_files_in_dir_and_subs(commit_path: str) -> Generator[Union[bytes, str], Any, None]:
-    for (root, dirs, files) in os.walk(commit_path, topdown=True):
+def get_all_files_in_directory_and_subs(directory: Union[Path, str], start_path: Union[Path, str]) -> Iterator[str]:
+    for (root, dirs, files) in os.walk(directory, topdown=True):
         for file in files:
-            yield os.path.join(root, file)
+            file_path = os.path.join(root, file)
+            rel = os.path.relpath(file_path, start=start_path)
+            yield rel
 
 
-def get_files_in_staging_area_that_dont_match_original(repository: Path) -> Generator[str, Any, None]:
-    staging_area_path = os.path.join(repository, '.wit', 'staging_area')
-    all_files_in_repository_and_sub_dirs = get_all_files_and_dirs_in_repository(repository)
-    all_files_in_staging_area_and_sub = get_all_files_in_dir_and_subs(staging_area_path)
-    yield from get_names_of_changed_files(
-        all_files_in_staging_area_and_sub, all_files_in_repository_and_sub_dirs, staging_area_path, repository
-    )
+def get_changes_to_be_committed(commit_path: Union[Path, str], staging_area_path: Union[Path, str]) -> Iterator[str]:
+    cmp = dircmp(commit_path, staging_area_path)
+    yield from get_new_and_changed_files(cmp, staging_area_path)
+    for d, d_cmp in cmp.subdirs.items():
+        yield from get_new_and_changed_files(d_cmp, os.path.join(staging_area_path, d))
 
 
-def get_all_files_and_dirs_in_repository(repository: Path) -> Generator[Union[bytes, str], Any, None]:
-    for (root, dirs, files) in os.walk(repository, topdown=True):
-        if '.wit' not in Path(root).parts:
-            for file in files:
-                yield os.path.join(root, file)
+def get_new_and_changed_files(cmp: dircmp[Union[str, bytes]], staging_area_path: Union[Path, str]) -> Iterator[str]:
+    yield from get_new_files_added(cmp, staging_area_path)
+    yield from get_changed_files(cmp, staging_area_path)
 
 
-def get_files_not_in_staging_area(repository: Path) -> Generator[Any, Any, None]:
-    staging_area_path = os.path.join(repository, '.wit', 'staging_area')
-    files_names_in_repository_and_sub_dirs = get_files_names_of_repository_and_subs(repository)
-    all_files_in_staging_area_and_sub_dirs = get_files_of_dir_and_subdirs(staging_area_path)
-    for file in files_names_in_repository_and_sub_dirs:
-        if file not in all_files_in_staging_area_and_sub_dirs:
-            yield file
+def get_changed_files(cmp: dircmp[Union[str, bytes]], staging_area_path) -> Iterator[str]:
+    diff_files = cmp.diff_files
+    start_path = os.path.join(get_directory_with_wit(Path.cwd()), '.wit', 'staging_area')
+    for diff in diff_files:
+        file_path = os.path.join(staging_area_path, diff)
+        rel = os.path.relpath(file_path, start=start_path)
+        yield rel
 
 
-def get_files_names_of_repository_and_subs(repository: Path):
-    for (root, dirs, files) in os.walk(repository, topdown=True):
-        if '.wit' not in Path(root).parts:
-            for file in files:
-                yield file
+def get_new_files_added(cmp: dircmp[Union[str, bytes]], staging_area_path: Union[Path, str]) -> Iterator[str]:
+    new_files_added = cmp.right_only
+    start_path = staging_area_path
+    for f in new_files_added:
+        f_path = os.path.join(staging_area_path, f)
+        if os.path.isfile(f_path):
+            yield f
+        else:
+            yield from get_all_files_in_directory_and_subs(f_path, start_path)
 
 
-def get_files_of_dir_and_subdirs(file_path: str) -> Generator[Any, Any, None]:
-    for (root, dirs, files) in os.walk(file_path, topdown=True):
-        for file in files:
-            yield file
+def get_changes_not_staged_for_commit(
+        repository: Union[Path, str], staging_area_path: Union[Path, str]
+) -> Iterator[str]:
+    cmp = dircmp(repository, staging_area_path)
+    yield from get_changed_files(cmp, staging_area_path)
+    for common_dir in cmp.common_dirs:
+        path_in_repository = os.path.join(repository, common_dir)
+        path_in_staging_area = os.path.join(staging_area_path, common_dir)
+        yield from get_changes_not_staged_for_commit(path_in_repository, path_in_staging_area)
+
+
+def get_untracked_files(repository: Union[Path, str], staging_area_path: Union[Path, str]) -> Iterator[str]:
+    cmp = dircmp(staging_area_path, repository, ignore=['.wit'])
+    yield from get_new_files_added(cmp, repository)
+    for common_dir in cmp.common_dirs:
+        path_in_repository = os.path.join(repository, common_dir)
+        path_in_staging_area = os.path.join(staging_area_path, common_dir)
+        yield from get_untracked_files(path_in_repository, path_in_staging_area)
 
 
 def checkout(commit_id_or_branch: str) -> None:
     repository = get_directory_with_wit(Path.cwd())
+    commit_path = os.path.join(repository, '.wit', 'images', commit_id_or_branch)
+    staging_area_path = os.path.join(repository, '.wit', 'staging_area')
+    last_commit_id = get_parent_head(repository)
+    last_commit_path = os.path.join(repository, '.wit', 'images', last_commit_id)
     if not repository:
         raise WitError("<.wit> file not found")
-    references_file = repository.joinpath('.wit', 'references.txt')
-    last_commit_id = get_parent_head(repository)
     if (
-        list(get_files_added_since_last_commit(last_commit_id, repository))
-        or list(get_files_changed_since_last_commit(last_commit_id, repository))
-        or list(get_files_in_staging_area_that_dont_match_original(repository))
+        list(get_changes_to_be_committed(last_commit_path, staging_area_path))
+        or list(get_changes_not_staged_for_commit(repository, staging_area_path))
     ):
         raise FilesDoesntMatchError("There are files added or changed after last commit")
+    references_file = repository.joinpath('.wit', 'references.txt')
     commit_id = get_commit_id_of_branch(commit_id_or_branch, references_file)
-    print(commit_id)
-    change_files_in_main_folder(repository, commit_id)
+    change_files_in_main_folder(commit_path, repository)
     change_head_in_references_file(commit_id, references_file)
-    change_staging_area_folder(repository, commit_id)
-    write_activated(commit_id, commit_id_or_branch, repository)  #
+    change_staging_area_folder(staging_area_path, commit_path)
+    write_activated(commit_id_or_branch, repository)
 
 
-def write_activated(commit_id: str, commit_id_or_branch: str, repository: Path) -> None:
+def write_activated(commit_id_or_branch: str, repository: Path) -> None:
     activated_path = repository.joinpath('.wit', 'activated.txt')
-    Path(activated_path).write_text(commit_id_or_branch)
+    activated_path.write_text(commit_id_or_branch)
+
+
+def change_head_in_references_file(commit_id: str, references_file: Path) -> None:
+    with references_file.open() as file:
+        branches = file.readlines()[1:]
+        branches_txt = ''.join(branches)
+    references_file.write_text(f'HEAD={commit_id}\n{branches_txt}')
 
 
 def get_commit_id_of_branch(commit_id_or_branch: str, references_file: Path) -> str:
@@ -272,54 +258,37 @@ def get_commit_id_of_branch(commit_id_or_branch: str, references_file: Path) -> 
     return commit_id_or_branch
 
 
-def change_head_in_references_file(commit_id: str, references_file: Path) -> None:
-    with references_file.open() as file:
-        branches = file.readlines()[1:]
-        branches_txt = ''.join(branches)
-    references_file.write_text(f'HEAD={commit_id}\n{branches_txt}')
-
-
 def get_master_commit_id(references_file: Path) -> str:
     with references_file.open() as file:
         references_content = file.readlines()
-        master_line = references_content[1].split('=')
+        master_line = references_content[-1].split('=')
         commit_id = master_line[-1].strip()
     return commit_id
 
 
-def change_files_in_main_folder(repository: Path, commit_id: str) -> None:
-    commit_path = os.path.join(repository, '.wit', 'images', commit_id)
-    # all_files_in_repository_and_sub_dirs = get_all_files_and_dirs_in_repository(repository)
-    all_files_in_repository_and_sub_dirs = []
-    for (root, dirs, files) in os.walk(repository, topdown=True):
-        if '.wit' not in Path(root).parts:
-            for file in files:
-                all_files_in_repository_and_sub_dirs.append(os.path.join(root, file))
-    # all_files_in_commit_and_sub_dirs = get_files_of_dir_and_subdirs(commit_path)  # didn't work with the functions
-    all_files_in_commit_and_sub_dirs = []
-    for (root, dirs, files) in os.walk(commit_path, topdown=True):
-        for file in files:
-            all_files_in_commit_and_sub_dirs.append(os.path.join(root, file))
-    for c_file in all_files_in_commit_and_sub_dirs:
-        for r_file in all_files_in_repository_and_sub_dirs:
-            if Path(r_file).relative_to(repository) == Path(c_file).relative_to(commit_path):
-                shutil.copy2(c_file, r_file)
+def change_files_in_main_folder(commit_path: str, repository: Path) -> None:
+    files_committed = get_all_files_in_directory_and_subs(commit_path, commit_path)
+    for committed_file in files_committed:
+        path_in_commit = os.path.join(commit_path, committed_file)
+        with open(path_in_commit, 'r') as committed_file_h:
+            content = committed_file_h.read()
+        path_in_repository = os.path.join(repository, committed_file)
+        with open(path_in_repository, "w") as original_file:
+            original_file.write(content)
 
 
-def change_staging_area_folder(dir_with_wit: Path, commit_id: str):
-    staging_area_path = dir_with_wit.joinpath('.wit', 'staging_area')
-    commit_path = dir_with_wit.joinpath('.wit', 'images', commit_id)
-    for file_or_dir in staging_area_path.iterdir():
+def change_staging_area_folder(staging_area_path: str, commit_path: str):
+    for file_or_dir in Path(staging_area_path).iterdir():
         if file_or_dir.is_file():
             file_or_dir.unlink()
         else:
             shutil.rmtree(file_or_dir)
-    for file in commit_path.iterdir():
+    for file in Path(commit_path).iterdir():
         rel_path = Path(file).relative_to(commit_path)
         if file.is_file():
-            shutil.copy2(file, staging_area_path.joinpath(rel_path))
+            shutil.copy2(file, Path(staging_area_path).joinpath(rel_path))
         else:
-            shutil.copytree(file, staging_area_path.joinpath(rel_path))
+            shutil.copytree(file, Path(staging_area_path).joinpath(rel_path))
 
 
 def branch(name: str) -> None:
@@ -341,7 +310,7 @@ class FilesDoesntMatchError(Exception):
 
 
 def is_command_correct(argv: list[str]) -> bool:
-    if argv[1] in ['init', 'status']:
+    if argv[1] in {'init', 'status'}:
         return len(argv) == 2
     else:
         return len(argv) == 3
