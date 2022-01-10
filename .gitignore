@@ -129,3 +129,5 @@ dmypy.json
 .pyre/
 .wit
 .idea
+__pycache__
+wit_exercises
