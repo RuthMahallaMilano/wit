@@ -3,13 +3,14 @@ from branch import branch
 from checkout import checkout
 from commit import commit
 from init import init
+from project.graph import graph
 from status import status
 
 import sys
 
 
 def is_command_correct(argv: list[str]) -> bool:
-    if argv[1] in {'init', 'status'}:
+    if argv[1] in {'init', 'status', 'graph'}:
         return len(argv) == 2
     else:
         return len(argv) == 3
@@ -50,3 +51,9 @@ elif sys.argv[1] == 'branch':
         branch(sys.argv[2])
     else:
         print(fr"Usage: python {sys.argv[0]} branch <NAME>")
+
+elif sys.argv[1] == 'graph':
+    if is_command_correct(sys.argv):
+        graph()
+    else:
+        print(fr"Usage: python {sys.argv[0]} graph")
