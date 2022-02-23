@@ -1,4 +1,5 @@
 import os
+import shutil
 from pathlib import Path
 import pytest
 
@@ -17,5 +18,5 @@ def test_folder():
     os.mkdir(folder2_path)
     file3_path = Path(folder2_path).joinpath('file3.txt')
     file3_path.write_text("")
-    return folder_name  # yield?
-    # os.unlink(folder_name)
+    yield folder_name
+    shutil.rmtree(folder_name)

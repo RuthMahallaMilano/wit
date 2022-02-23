@@ -1,4 +1,4 @@
-from errors import WitError
+from project.errors import WitError
 
 import os
 from pathlib import Path
