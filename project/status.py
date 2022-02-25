@@ -1,4 +1,4 @@
-from add import get_directory_with_wit
+from add import get_repository_path
 from commit import get_parent_head
 from errors import WitError
 
@@ -8,22 +8,32 @@ from pathlib import Path
 from typing import Union, Iterator
 
 
-def status() -> None:
-    repository = get_directory_with_wit(Path.cwd())
+def status():
+    repository = get_repository_path(Path.cwd())
     if not repository:
         raise WitError("<.wit> file not found")
-    commit_id = get_parent_head(repository)
-    commit_path = os.path.join(repository, '.wit', 'images', commit_id)
     staging_area_path = os.path.join(repository, '.wit', 'staging_area')
-    changes_to_be_committed = list(get_changes_to_be_committed(commit_path, staging_area_path))
-    changes_not_staged_for_commit = list(get_changes_not_staged_for_commit(repository, staging_area_path))
-    untracked_files = list(get_untracked_files(repository, staging_area_path))
+    commit_id = get_parent_head(repository)
+    print(commit_id)
+    message_if_no_commit = "No commit was done yet."
+    commit_path = os.path.join(repository, '.wit', 'images', commit_id)
+    print(commit_path)
+    changes_to_be_committed = show_files(get_changes_to_be_committed(commit_path, staging_area_path))
+    changes_not_staged_for_commit = show_files(get_changes_not_staged_for_commit(repository, staging_area_path))
+    untracked_files = show_files(get_untracked_files(repository, staging_area_path))
     print(
-        f"Commit id: {commit_id}\n"
-        f"Changes to be committed: {changes_to_be_committed}\n"
-        f"Changes not staged for commit: {changes_not_staged_for_commit}\n"
-        f"Untracked files: {untracked_files}"
+        f"###Commit id:###\n{commit_id if commit_id else message_if_no_commit}\n\n"
+        f"###Changes to be committed:###\n{changes_to_be_committed}\n\n"
+        f"###Changes not staged for commit:###\n{changes_not_staged_for_commit}\n\n"
+        f"###Untracked files:###\n{untracked_files}\n"
     )
+
+
+def show_files(files: Iterator[str]) -> str:
+    files_str = ""
+    for file_path in files:
+        files_str += f"{file_path}\n"
+    return files_str
 
 
 def get_all_files_in_directory_and_subs(directory: Union[Path, str], start_path: Union[Path, str]) -> Iterator[str]:
@@ -48,7 +58,7 @@ def get_new_and_changed_files(cmp: dircmp[Union[str, bytes]], staging_area_path:
 
 def get_changed_files(cmp: dircmp[Union[str, bytes]], staging_area_path) -> Iterator[str]:
     diff_files = cmp.diff_files
-    start_path = os.path.join(get_directory_with_wit(Path.cwd()), '.wit', 'staging_area')
+    start_path = os.path.join(get_repository_path(Path.cwd()), '.wit', 'staging_area')
     for diff in diff_files:
         file_path = os.path.join(staging_area_path, diff)
         rel = os.path.relpath(file_path, start=start_path)

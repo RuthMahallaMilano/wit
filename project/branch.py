@@ -1,4 +1,4 @@
-from add import get_directory_with_wit
+from add import get_repository_path
 from commit import get_parent_head
 from errors import WitError
 
@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 def branch(name: str) -> None:
-    repository = get_directory_with_wit(Path.cwd())
+    repository = get_repository_path(Path.cwd())
     if not repository:
         raise WitError("<.wit> file not found")
     references_file = repository.joinpath('.wit', 'references.txt')

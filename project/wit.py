@@ -3,7 +3,7 @@ from branch import branch
 from checkout import checkout
 from commit import commit
 from init import init
-from project.graph import graph
+from graph import graph
 from status import status
 
 import sys

@@ -1,0 +1,6 @@
+add "C:\Users\israe\Desktop\test\folder1\folder2\folder3" -> status:
+###Untracked files:###
+file3.txt
+instead of:
+###Untracked files:###
+folder2\file3.txt

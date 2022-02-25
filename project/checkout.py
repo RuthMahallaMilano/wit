@@ -1,21 +1,22 @@
-from add import get_directory_with_wit
+import re
+
+from add import get_repository_path
 from commit import get_parent_head
 from errors import FilesDoesntMatchError, WitError
+from status import get_changes_to_be_committed, get_changes_not_staged_for_commit, get_all_files_in_directory_and_subs
 
 import os
 from pathlib import Path
 import shutil
 
-from status import get_changes_to_be_committed, get_changes_not_staged_for_commit, get_all_files_in_directory_and_subs
-
 
 def checkout(commit_id_or_branch: str) -> None:
-    repository = get_directory_with_wit(Path.cwd())
+    repository = get_repository_path(Path.cwd())
+    if not repository:
+        raise WitError("<.wit> file not found")
     staging_area_path = os.path.join(repository, '.wit', 'staging_area')
     last_commit_id = get_parent_head(repository)
     last_commit_path = os.path.join(repository, '.wit', 'images', last_commit_id)
-    if not repository:
-        raise WitError("<.wit> file not found")
     if (
         list(get_changes_to_be_committed(last_commit_path, staging_area_path))
         or list(get_changes_not_staged_for_commit(repository, staging_area_path))
@@ -46,15 +47,21 @@ def change_head_in_references_file(commit_id: str, references_file: Path) -> Non
 
 
 def get_commit_id_of_branch(commit_id_or_branch: str, references_file: Path) -> str:
+    branch_regex = re.compile(r"^(?P<branch_name>\w+)=(?P<branch_id>\w){20}$")
     with references_file.open() as file:
-        references_content = file.readlines()
-        branches_data = references_content[1:]
-        for branch_line in branches_data:
-            name_and_id = branch_line.split('=')
-            branch_name = name_and_id[0]
-            branch_id = name_and_id[1].strip()
-            if branch_name == commit_id_or_branch:
-                return branch_id
+        for line in file:
+            match = branch_regex.match(line)
+            if match.groupdict()['branch_name'] == commit_id_or_branch:
+                return match.groupdict()['branch_id']
+        # references_content = file.readlines()
+        # branches_data = references_content[1:]
+
+        # for branch_line in branches_data:
+            # name_and_id = branch_line.split('=')
+            # branch_name = name_and_id[0]
+            # branch_id = name_and_id[1].strip()
+            # if branch_name == commit_id_or_branch:
+            #     return branch_id
     return commit_id_or_branch
 
 

@@ -1,9 +1,7 @@
-from add import get_directory_with_wit
-
-import datetime
-
+from add import get_repository_path
 from errors import WitError
 
+import datetime
 import os
 from pathlib import Path
 import random
@@ -11,15 +9,15 @@ import shutil
 
 
 def commit(message: str) -> None:
-    dir_with_wit = get_directory_with_wit(Path.cwd())
-    if not dir_with_wit:
+    repository = get_repository_path(Path.cwd())
+    if not repository:
         raise WitError("<.wit> file not found")
-    images_path = dir_with_wit.joinpath('.wit', 'images')
+    images_path = repository.joinpath('.wit', 'images')
     path_of_new_folder = create_commit_folder(images_path)
-    create_commit_txt_file(dir_with_wit, images_path, path_of_new_folder, message)
-    save_files(dir_with_wit, path_of_new_folder)
+    create_commit_txt_file(repository, images_path, path_of_new_folder, message)
+    save_files(repository, path_of_new_folder)
     commit_id = os.path.basename(path_of_new_folder)
-    write_references(commit_id, dir_with_wit)
+    write_references(commit_id, repository)
 
 
 def create_commit_folder(images_path: Path) -> str:
@@ -36,8 +34,8 @@ def create_folder_name():
     return folder_name
 
 
-def create_commit_txt_file(dir_with_wit: Path, images_path: Path, path_of_new_folder: str, message: str) -> None:
-    parent_head = get_parent_head(dir_with_wit)
+def create_commit_txt_file(repository: Path, images_path: Path, path_of_new_folder: str, message: str) -> None:
+    parent_head = get_parent_head(repository)
     txt_file = images_path.joinpath(Path(path_of_new_folder).name + '.txt')
     txt_file.write_text(
         f'parent = {parent_head if parent_head else None}\n'
@@ -46,8 +44,8 @@ def create_commit_txt_file(dir_with_wit: Path, images_path: Path, path_of_new_fo
     )
 
 
-def get_parent_head(dir_with_wit: Path) -> str:
-    wit_folder = dir_with_wit.joinpath('.wit')
+def get_parent_head(repository: Path) -> str:
+    wit_folder = repository.joinpath('.wit')
     references_file = wit_folder.joinpath('references.txt')
     if references_file.exists():
         ref_path = wit_folder.joinpath('references.txt')
@@ -58,8 +56,8 @@ def get_parent_head(dir_with_wit: Path) -> str:
     return ''
 
 
-def save_files(dir_with_wit: Path, path_of_new_folder: str) -> None:
-    staging_area_path = os.path.join(dir_with_wit, '.wit', 'staging_area')
+def save_files(repository: Path, path_of_new_folder: str) -> None:
+    staging_area_path = os.path.join(repository, '.wit', 'staging_area')
     for item in os.listdir(staging_area_path):
         src = os.path.join(staging_area_path, item)
         dst = os.path.join(path_of_new_folder, item)
@@ -69,8 +67,8 @@ def save_files(dir_with_wit: Path, path_of_new_folder: str) -> None:
             shutil.copytree(src, dst)
 
 
-def write_references(commit_id: str, dir_with_wit: Path) -> None:
-    wit_folder = dir_with_wit.joinpath('.wit')
+def write_references(commit_id: str, repository: Path) -> None:
+    wit_folder = repository.joinpath('.wit')
     ref_file = wit_folder.joinpath('references.txt')
     activated_path = wit_folder.joinpath('activated.txt')
     activated_branch = activated_path.read_text()

@@ -23,7 +23,7 @@ from project import add, init
 )
 def test_get_directory_with_wit(test_folder, path, parent):
     init.init(test_folder)
-    assert add.get_directory_with_wit(path) == parent
+    assert add.get_repository_path(path) == parent
 
 
 @pytest.mark.parametrize(
