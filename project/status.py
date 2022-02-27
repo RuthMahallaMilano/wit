@@ -1,11 +1,16 @@
-from add import get_repository_path
-from commit import get_parent_head
-from errors import WitError
-
 from filecmp import dircmp
 import os
 from pathlib import Path
 from typing import Union, Iterator
+
+from add import get_repository_path
+from commit import get_parent_head
+from errors import WitError
+
+# Problems:
+# Untracked files: if I add folders or files to folder2 (test\folder1\folder2) or to folder inside it-
+# they don't appear in Untracked files.
+# .
 
 
 def status():
@@ -14,10 +19,8 @@ def status():
         raise WitError("<.wit> file not found")
     staging_area_path = os.path.join(repository, '.wit', 'staging_area')
     commit_id = get_parent_head(repository)
-    print(commit_id)
     message_if_no_commit = "No commit was done yet."
     commit_path = os.path.join(repository, '.wit', 'images', commit_id)
-    print(commit_path)
     changes_to_be_committed = show_files(get_changes_to_be_committed(commit_path, staging_area_path))
     changes_not_staged_for_commit = show_files(get_changes_not_staged_for_commit(repository, staging_area_path))
     untracked_files = show_files(get_untracked_files(repository, staging_area_path))
@@ -30,55 +33,56 @@ def status():
 
 
 def show_files(files: Iterator[str]) -> str:
-    files_str = ""
-    for file_path in files:
-        files_str += f"{file_path}\n"
-    return files_str
+    return '\n'.join(files)
 
 
 def get_all_files_in_directory_and_subs(directory: Union[Path, str], start_path: Union[Path, str]) -> Iterator[str]:
-    for (root, dirs, files) in os.walk(directory, topdown=True):
+    for root, dirs, files in os.walk(directory, topdown=True):
+        if not files and not dirs:
+            yield os.path.relpath(root, start_path)
         for file in files:
-            file_path = os.path.join(root, file)
-            rel = os.path.relpath(file_path, start=start_path)
-            yield rel
+            file_abs_path = os.path.join(root, file)
+            yield os.path.relpath(file_abs_path, start_path)
+        for dir_name in dirs:
+            yield from get_all_files_in_directory_and_subs(dir_name, os.path.join(start_path, dir_name))
 
 
 def get_changes_to_be_committed(commit_path: Union[Path, str], staging_area_path: Union[Path, str]) -> Iterator[str]:
+    """Yield files that the user added to staging area since last commit and will be added to the next commit."""
     cmp = dircmp(commit_path, staging_area_path)
     yield from get_new_and_changed_files(cmp, staging_area_path)
     for d, d_cmp in cmp.subdirs.items():
         yield from get_new_and_changed_files(d_cmp, os.path.join(staging_area_path, d))
 
 
-def get_new_and_changed_files(cmp: dircmp[Union[str, bytes]], staging_area_path: Union[Path, str]) -> Iterator[str]:
-    yield from get_new_files_added(cmp, staging_area_path)
-    yield from get_changed_files(cmp, staging_area_path)
+def get_new_and_changed_files(cmp: dircmp[Union[str, bytes]], dir_path: Union[Path, str]) -> Iterator[str]:
+    """Yield files that are new in the directory or have different content."""
+    yield from get_new_files_added(cmp, dir_path)
+    yield from get_changed_files(cmp, dir_path)
 
 
-def get_changed_files(cmp: dircmp[Union[str, bytes]], staging_area_path) -> Iterator[str]:
+def get_changed_files(cmp: dircmp[Union[str, bytes]], dir_path: Union[Path, str]) -> Iterator[str]:
+    """Yield files that have different content."""
     diff_files = cmp.diff_files
     start_path = os.path.join(get_repository_path(Path.cwd()), '.wit', 'staging_area')
     for diff in diff_files:
-        file_path = os.path.join(staging_area_path, diff)
+        file_path = os.path.join(dir_path, diff)
         rel = os.path.relpath(file_path, start=start_path)
         yield rel
 
 
-def get_new_files_added(cmp: dircmp[Union[str, bytes]], staging_area_path: Union[Path, str]) -> Iterator[str]:
+def get_new_files_added(cmp: dircmp[Union[str, bytes]], dir_path: Union[Path, str], start_path=None) -> Iterator[str]:
+    """Yield files that are new in the directory."""
     new_files_added = cmp.right_only
-    start_path = staging_area_path
     for f in new_files_added:
-        f_path = os.path.join(staging_area_path, f)
+        f_path = os.path.join(dir_path, f)
         if os.path.isfile(f_path):
-            yield f
-        else:
-            yield from get_all_files_in_directory_and_subs(f_path, start_path)
+            yield f if not start_path else os.path.relpath(f_path, start=start_path)
+        yield from get_all_files_in_directory_and_subs(f_path, start_path=dir_path if not start_path else start_path)
 
 
-def get_changes_not_staged_for_commit(
-        repository: Union[Path, str], staging_area_path: Union[Path, str]
-) -> Iterator[str]:
+def get_changes_not_staged_for_commit(repository: Union[Path, str], staging_area_path: Union[Path, str]) -> Iterator[str]:
+    """Yield files in staging area which their content in repository doesn't match their content in staging area."""
     cmp = dircmp(repository, staging_area_path)
     yield from get_changed_files(cmp, staging_area_path)
     for common_dir in cmp.common_dirs:
@@ -88,9 +92,8 @@ def get_changes_not_staged_for_commit(
 
 
 def get_untracked_files(repository: Union[Path, str], staging_area_path: Union[Path, str]) -> Iterator[str]:
+    """Yield files that exist only in repository and were never added to staging area."""
     cmp = dircmp(staging_area_path, repository, ignore=['.wit'])
     yield from get_new_files_added(cmp, repository)
-    for common_dir in cmp.common_dirs:
-        path_in_repository = os.path.join(repository, common_dir)
-        path_in_staging_area = os.path.join(staging_area_path, common_dir)
-        yield from get_untracked_files(path_in_repository, path_in_staging_area)
+    for d, d_cmp in cmp.subdirs.items():
+        yield from get_new_files_added(d_cmp, os.path.join(repository, d), start_path=repository)
