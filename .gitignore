@@ -131,3 +131,4 @@ dmypy.json
 .idea
 __pycache__
 wit_exercises
+problems.txt

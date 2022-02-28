@@ -4,3 +4,6 @@ file3.txt
 instead of:
 ###Untracked files:###
 folder2\file3.txt
+
+###Changes to be committed:###
+folder2\folder3\file4.txt

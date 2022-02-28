@@ -8,9 +8,8 @@ from commit import get_parent_head
 from errors import WitError
 
 # Problems:
-# Untracked files: if I add folders or files to folder2 (test\folder1\folder2) or to folder inside it-
-# they don't appear in Untracked files.
-# .
+# Untracked files: if I do "add" to a file/ folder inside folder 1 (test\folder1\folder2\...) -
+# all other files/ folders inside don't appear in Untracked files.
 
 
 def status():
