@@ -1,8 +1,8 @@
+from pathlib import Path
+
 from add import get_repository_path
 from commit import get_parent_head
 from errors import WitError
-
-from pathlib import Path
 
 
 def branch(name: str) -> None:

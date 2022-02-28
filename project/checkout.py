@@ -1,22 +1,20 @@
-import re
-
-from add import get_repository_path
-from commit import get_parent_head
-from errors import FilesDoesntMatchError, WitError
-from status import get_changes_to_be_committed, get_changes_not_staged_for_commit, get_all_files_in_directory_and_subs
-
 import os
 from pathlib import Path
 import shutil
 
+from add import get_repository_path
+from commit import get_parent_head, get_commit_id_of_branch
+from errors import FilesDoesntMatchError, WitError, BranchDoesntExistError
+from status import get_changes_to_be_committed, get_changes_not_staged_for_commit, get_all_files_in_directory_and_subs
+
 
 def checkout(commit_id_or_branch: str) -> None:
     repository = get_repository_path(Path.cwd())
-    if not repository:
-        raise WitError("<.wit> file not found")
     staging_area_path = os.path.join(repository, '.wit', 'staging_area')
     last_commit_id = get_parent_head(repository)
     last_commit_path = os.path.join(repository, '.wit', 'images', last_commit_id)
+    if not repository:
+        raise WitError("<.wit> file not found")
     if (
         list(get_changes_to_be_committed(last_commit_path, staging_area_path))
         or list(get_changes_not_staged_for_commit(repository, staging_area_path))
@@ -24,6 +22,8 @@ def checkout(commit_id_or_branch: str) -> None:
         raise FilesDoesntMatchError("There are files added or changed after last commit")
     references_file = repository.joinpath('.wit', 'references.txt')
     commit_id = get_commit_id_of_branch(commit_id_or_branch, references_file)
+    if not commit_id:
+        raise BranchDoesntExistError("Branch doesn't exist.")
     if commit_id != commit_id_or_branch:
         write_activated(commit_id_or_branch, repository)
     commit_path = os.path.join(repository, '.wit', 'images', commit_id)
@@ -46,23 +46,25 @@ def change_head_in_references_file(commit_id: str, references_file: Path) -> Non
     references_file.write_text(f'HEAD={commit_id}\n{branches_txt}')
 
 
-def get_commit_id_of_branch(commit_id_or_branch: str, references_file: Path) -> str:
-    branch_regex = re.compile(r"^(?P<branch_name>\w+)=(?P<branch_id>\w){20}$")
-    with references_file.open() as file:
-        for line in file:
-            match = branch_regex.match(line)
-            if match.groupdict()['branch_name'] == commit_id_or_branch:
-                return match.groupdict()['branch_id']
-        # references_content = file.readlines()
-        # branches_data = references_content[1:]
-
-        # for branch_line in branches_data:
-            # name_and_id = branch_line.split('=')
-            # branch_name = name_and_id[0]
-            # branch_id = name_and_id[1].strip()
-            # if branch_name == commit_id_or_branch:
-            #     return branch_id
-    return commit_id_or_branch
+# def get_commit_id_of_branch(commit_id_or_branch: str, references_file: Path) -> str:
+#     branch_regex = re.compile(r"^(?P<branch_name>\w+)=(?P<branch_id>\w{20})$")
+#     with references_file.open() as file:
+#         for line in file:
+#             match = branch_regex.match(line)
+#             # print(f"match.groupdict()['branch_name']: {match.groupdict()['branch_name']}")
+#             # print(f"match.groupdict()['branch_id']: {match.groupdict()['branch_id']}")
+#             if match.groupdict()['branch_name'] == commit_id_or_branch:
+#                 return match.groupdict()['branch_id']
+#         # references_content = file.readlines()
+#         # branches_data = references_content[1:]
+#
+#         # for branch_line in branches_data:
+#             # name_and_id = branch_line.split('=')
+#             # branch_name = name_and_id[0]
+#             # branch_id = name_and_id[1].strip()
+#             # if branch_name == commit_id_or_branch:
+#             #     return branch_id
+#     return commit_id_or_branch
 
 
 def change_files_in_main_folder(commit_path: str, repository: Path) -> None:

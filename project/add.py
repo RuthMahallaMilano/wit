@@ -1,9 +1,9 @@
-from errors import WitError
-
 import os
 from pathlib import Path
 import shutil
 from typing import Optional
+
+from errors import WitError
 
 
 def add(path_to_add: str) -> None:

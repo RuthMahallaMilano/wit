@@ -4,3 +4,7 @@ class WitError(Exception):
 
 class FilesDoesntMatchError(Exception):
     pass
+
+
+class BranchDoesntExistError(Exception):
+    pass

@@ -1,9 +1,17 @@
-add "C:\Users\israe\Desktop\test\folder1\folder2\folder3" -> status:
-###Untracked files:###
-file3.txt
-instead of:
-###Untracked files:###
-folder2\file3.txt
+init > status > untracked: OK. all files. full path.
 
-###Changes to be committed:###
-folder2\folder3\file4.txt
+add file1 > status: still OK.
+
+commit > status OK.
+
+add "C:\Users\israe\Desktop\test\folder1\folder2\folder3" > status: Untracked with files names only.
+
+commit > Untracked still with names.
+
+branch + checkout branch > status same
+
+add "C:\Users\israe\Desktop\test\folder1\folder2\file3.txt" > status: file not in Changes to be committed.
+
+change file > file appears only in Changes not staged for commit.
+
+commit > same

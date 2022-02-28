@@ -1,11 +1,12 @@
-from add import get_repository_path
-from errors import WitError
-
 import datetime
 import os
 from pathlib import Path
 import random
+import re
 import shutil
+
+from add import get_repository_path
+from errors import WitError
 
 
 def commit(message: str) -> None:
@@ -44,15 +45,21 @@ def create_commit_txt_file(repository: Path, images_path: Path, path_of_new_fold
     )
 
 
+def get_commit_id_of_branch(branch: str, references_file: Path) -> str:
+    branch_regex = re.compile(r"^(?P<branch_name>\w+)=(?P<branch_id>\w{20})$")
+    with references_file.open() as file:
+        for line in file:
+            match = branch_regex.match(line)
+            if match.groupdict()['branch_name'] == branch:
+                return match.groupdict()['branch_id']
+    return branch if branch.isdigit() else ''
+
+
 def get_parent_head(repository: Path) -> str:
     wit_folder = repository.joinpath('.wit')
     references_file = wit_folder.joinpath('references.txt')
     if references_file.exists():
-        ref_path = wit_folder.joinpath('references.txt')
-        with ref_path.open() as f_h:
-            references_content = f_h.readlines()
-            head_line = references_content[0].split('=')
-        return head_line[1].strip()
+        return get_commit_id_of_branch('HEAD', references_file)
     return ''
 
 
@@ -86,5 +93,5 @@ def write_references(commit_id: str, repository: Path) -> None:
                 activated_id = branch_id
                 if activated_id == current_head_id:
                     line = "=".join((branch_name, commit_id))
-            new_content += line
+            new_content += line + "\n"
     ref_file.write_text(f'HEAD={commit_id}\n{new_content}')

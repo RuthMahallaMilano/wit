@@ -7,6 +7,10 @@ from add import get_repository_path
 from commit import get_parent_head
 from errors import WitError
 
+# If I do "add" to a file / folder inside folder 1 (test\folder1\folder2\...) -
+# sometimes all other files/ folders inside don't appear in Untracked files.
+# and other times they don't appear in Changes to be committed. Very weired...
+
 
 def status():
     repository = get_repository_path(Path.cwd())
@@ -89,19 +93,14 @@ def get_changes_not_staged_for_commit(repository: Union[Path, str], staging_area
 
 def get_untracked_files(repository: Union[Path, str], staging_area_path: Union[Path, str]) -> Iterator[str]:
     """Yield files that exist only in repository and were never added to staging area."""
-    # this gives all untracked files, but I didn't succeed to get full path correctly:
-    cmp = dircmp(staging_area_path, repository, ignore=['.wit'])
-    yield from get_new_files_added(cmp, repository)
-    for common_dir in cmp.common_dirs:
-        path_in_repository = os.path.join(repository, common_dir)
-        path_in_staging_area = os.path.join(staging_area_path, common_dir)
-        yield from get_untracked_files(path_in_repository, path_in_staging_area)
-    """
-    here I managed to get full path correctly, but if I do "add" to a file / folder inside folder 1
-    (test\folder1\folder2\...) - all other files/ folders inside don't appear in Untracked files.
-    
+    # # this gives all untracked files, but I didn't succeed to get full path correctly:
+    # cmp = dircmp(staging_area_path, repository, ignore=['.wit'])
+    # yield from get_new_files_added(cmp, repository)
+    # for common_dir in cmp.common_dirs:
+    #     path_in_repository = os.path.join(repository, common_dir)
+    #     path_in_staging_area = os.path.join(staging_area_path, common_dir)
+    #     yield from get_untracked_files(path_in_repository, path_in_staging_area)
     cmp = dircmp(staging_area_path, repository, ignore=['.wit'])
     yield from get_new_files_added(cmp, repository)
     for d, d_cmp in cmp.subdirs.items():
         yield from get_new_files_added(d_cmp, os.path.join(repository, d), start_path=repository)
-    """
