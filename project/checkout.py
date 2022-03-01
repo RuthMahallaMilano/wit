@@ -3,7 +3,7 @@ from pathlib import Path
 import shutil
 
 from add import get_repository_path
-from commit import get_parent_head, get_commit_id_of_branch
+from commit import get_commit_id_of_branch, get_parent_head
 from errors import FilesDoesntMatchError, WitError, BranchDoesntExistError
 from status import get_changes_to_be_committed, get_changes_not_staged_for_commit, get_all_files_in_directory_and_subs
 
@@ -70,7 +70,9 @@ def change_head_in_references_file(commit_id: str, references_file: Path) -> Non
 def change_files_in_main_folder(commit_path: str, repository: Path) -> None:
     files_committed = get_all_files_in_directory_and_subs(commit_path, commit_path)
     for committed_file in files_committed:
+        # print(f"committed file: {committed_file}")
         path_in_commit = os.path.join(commit_path, committed_file)
+        # print(path_in_commit)
         with open(path_in_commit, 'r') as committed_file_h:
             content = committed_file_h.read()
         path_in_repository = os.path.join(repository, committed_file)

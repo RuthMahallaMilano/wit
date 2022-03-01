@@ -6,7 +6,6 @@ from typing import Union, Iterator
 from add import get_repository_path
 from commit import get_parent_head
 from errors import WitError
-
 # If I do "add" to a file / folder inside folder 1 (test\folder1\folder2\...) -
 # sometimes all other files/ folders inside don't appear in Untracked files.
 # and other times they don't appear in Changes to be committed. Very weired...
@@ -41,9 +40,15 @@ def get_all_files_in_directory_and_subs(directory: Union[Path, str], start_path:
             yield os.path.relpath(root, start_path)
         for file in files:
             file_abs_path = os.path.join(root, file)
+            # print(
+            #     f"***abs path: {file_abs_path}\n"
+            #     f"***start: {start_path}\n"
+            #     f"***rel: {os.path.relpath(file_abs_path, start_path)}"
+            # )
             yield os.path.relpath(file_abs_path, start_path)
         for dir_name in dirs:
-            yield from get_all_files_in_directory_and_subs(dir_name, os.path.join(start_path, dir_name))
+            # print(dir_name)
+            yield from get_all_files_in_directory_and_subs(os.path.join(directory, dir_name), start_path)
 
 
 def get_changes_to_be_committed(commit_path: Union[Path, str], staging_area_path: Union[Path, str]) -> Iterator[str]:

@@ -13,8 +13,11 @@ def add(path_to_add: str) -> None:
         raise WitError("<.wit> file not found")
     destination = repository.joinpath('.wit', 'staging_area')
     directories_to_copy = path.relative_to(repository).parts[:-1]
+    # print(f"directories_to_copy: {directories_to_copy}")
     for dir_name in directories_to_copy:
+        # print(f"dir name: {dir_name}")
         dirs = os.listdir(destination)
+        # print(f"dirs: {dirs}")
         destination = destination.joinpath(dir_name)
         if dir_name not in dirs:
             destination.mkdir()
@@ -26,6 +29,7 @@ def save_the_copy(destination: Path, file: Path) -> None:
         shutil.copy2(file, destination)
     else:
         destination_of_folder_if_doesnt_exists = destination.joinpath(file.name)
+        # print(f"destination_of_folder_if_doesnt_exists: {destination_of_folder_if_doesnt_exists}")
         if destination_of_folder_if_doesnt_exists.exists():
             shutil.rmtree(destination_of_folder_if_doesnt_exists)
         shutil.copytree(file, destination_of_folder_if_doesnt_exists)

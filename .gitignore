@@ -131,5 +131,4 @@ dmypy.json
 .idea
 __pycache__
 wit_exercises
-C:\Users\israe\projects\wit_project\wit\problems.txt
-C:\Users\israe\projects\wit_project\wit\project\graph.py
+/tests/
