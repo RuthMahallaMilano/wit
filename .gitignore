@@ -128,7 +128,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 .wit
-.idea
+/.idea/
 __pycache__
 wit_exercises
-/tests/

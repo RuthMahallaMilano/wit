@@ -1,59 +1,66 @@
-from add import add
-from branch import branch
-from checkout import checkout
-from commit import commit
-from init import init
-from graph import graph
-from status import status
+import click
 
-import sys
-
-
-def is_command_correct(argv: list[str]) -> bool:
-    if argv[1] in {'init', 'status', 'graph'}:
-        return len(argv) == 2
-    else:
-        return len(argv) == 3
+from add import add_function
+from branch import branch_function
+from checkout import checkout_function
+from commit import commit_function
+from graph import graph_function
+from init import init_function
+from status import status_function
 
 
-if sys.argv[1] == 'init':
-    if is_command_correct(sys.argv):
-        init()
-    else:
-        print(fr"Usage: python {sys.argv[0]} init")
+@click.group()
+def cli():
+    pass
 
-elif sys.argv[1] == 'add':
-    if is_command_correct(sys.argv):
-        add(sys.argv[2])
-    else:
-        print(fr"Usage: python {sys.argv[0]} add <file_path>")
 
-elif sys.argv[1] == 'commit':
-    if is_command_correct(sys.argv):
-        commit(sys.argv[2])
-    else:
-        print(fr"Usage: python {sys.argv[0]} commit MESSAGE")
+@cli.command()
+def init():
+    """Create a wit folder in the directory."""
+    init_function()
 
-elif sys.argv[1] == 'status':
-    if is_command_correct(sys.argv):
-        status()
-    else:
-        print(fr"Usage: python {sys.argv[0]} status")
 
-elif sys.argv[1] == 'checkout':
-    if is_command_correct(sys.argv):
-        checkout(sys.argv[2])
-    else:
-        print(fr"Usage: python {sys.argv[0]} checkout <commit_id>")
+@cli.command()
+@click.argument('path', type=click.Path(exists=True))
+def add(path):
+    """Add file or folder to staging area."""
+    add_function(path)
 
-elif sys.argv[1] == 'branch':
-    if is_command_correct(sys.argv):
-        branch(sys.argv[2])
-    else:
-        print(fr"Usage: python {sys.argv[0]} branch <NAME>")
 
-elif sys.argv[1] == 'graph':
-    if is_command_correct(sys.argv):
-        graph()
-    else:
-        print(fr"Usage: python {sys.argv[0]} graph")
+@cli.command()
+@click.argument('message')
+def commit(message):
+    """Save image of current files in staging area.
+    Save a message.
+    """
+    commit_function(message)
+
+
+@cli.command()
+def status():
+    """Show the status of files in directory."""
+    status_function()
+
+
+@cli.command()
+@click.argument('commit_id_or_branch')
+def checkout(commit_id_or_branch):
+    """Switch to another commit or branch, which will be activated."""
+    checkout_function(commit_id_or_branch)
+
+
+@cli.command()
+@click.argument('branch_name')
+def branch(branch_name):
+    """Create a new branch."""
+    branch_function(branch_name)
+
+
+@cli.command()
+def graph():
+    """Show graph of commits from current commit to the first."""
+    graph_function()
+
+
+if __name__ == "__main__":
+    cli()

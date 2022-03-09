@@ -3,21 +3,21 @@ import os
 from pathlib import Path
 from typing import Union, Iterator
 
-from add import get_repository_path
-from commit import get_parent_head
 from errors import WitError
-# If I do "add" to a file / folder inside folder 1 (test\folder1\folder2\...) -
+from global_functions import get_repository_path, get_head_reference
+
+# If I do "add_function" to a file / folder inside folder 1 (test\folder1\folder2\...) -
 # sometimes all other files/ folders inside don't appear in Untracked files.
 # and other times they don't appear in Changes to be committed. Very weired...
 
 
-def status():
+def status_function():
     repository = get_repository_path(Path.cwd())
     if not repository:
         raise WitError("<.wit> file not found")
     staging_area_path = os.path.join(repository, '.wit', 'staging_area')
-    commit_id = get_parent_head(repository)
-    message_if_no_commit = "No commit was done yet."
+    commit_id = get_head_reference(repository)
+    message_if_no_commit = "No commit_function was done yet."
     commit_path = os.path.join(repository, '.wit', 'images', commit_id)
     changes_to_be_committed = show_files(get_changes_to_be_committed(commit_path, staging_area_path))
     changes_not_staged_for_commit = show_files(get_changes_not_staged_for_commit(repository, staging_area_path))
@@ -25,7 +25,7 @@ def status():
     print(
         f"###Commit id:###\n{commit_id if commit_id else message_if_no_commit}\n\n"
         f"###Changes to be committed:###\n{changes_to_be_committed}\n\n"
-        f"###Changes not staged for commit:###\n{changes_not_staged_for_commit}\n\n"
+        f"###Changes not staged for commit_function:###\n{changes_not_staged_for_commit}\n\n"
         f"###Untracked files:###\n{untracked_files}\n"
     )
 
@@ -52,7 +52,7 @@ def get_all_files_in_directory_and_subs(directory: Union[Path, str], start_path:
 
 
 def get_changes_to_be_committed(commit_path: Union[Path, str], staging_area_path: Union[Path, str]) -> Iterator[str]:
-    """Yield files that the user added to staging area since last commit and will be added to the next commit."""
+    """Yield files that the user added to staging area since last commit_function and will be added to the next commit_function."""
     # sometimes I get the full path of the file and sometimes only the file name.
     cmp = dircmp(commit_path, staging_area_path)
     yield from get_new_and_changed_files(cmp, staging_area_path)

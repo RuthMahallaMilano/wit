@@ -2,9 +2,13 @@ class WitError(Exception):
     pass
 
 
-class FilesDoesntMatchError(Exception):
+class FilesDoesntMatchError(WitError):
     pass
 
 
-class BranchDoesntExistError(Exception):
+class BranchDoesntExistError(WitError):
+    pass
+
+
+class WitExistsError(WitError):
     pass

@@ -1,46 +1,40 @@
-import os
+from glob import glob
 from pathlib import Path
 import shutil
-from typing import Optional
 
 from errors import WitError
+from global_functions import get_repository_path
 
 
-def add(path_to_add: str) -> None:
-    path = Path(os.path.abspath(path_to_add))
+def add_function(path_to_add: str) -> None:
+    path = Path(path_to_add).resolve()
     repository = get_repository_path(path)
     if not repository:
         raise WitError("<.wit> file not found")
-    destination = repository.joinpath('.wit', 'staging_area')
-    directories_to_copy = path.relative_to(repository).parts[:-1]
-    # print(f"directories_to_copy: {directories_to_copy}")
-    for dir_name in directories_to_copy:
-        # print(f"dir name: {dir_name}")
-        dirs = os.listdir(destination)
-        # print(f"dirs: {dirs}")
-        destination = destination.joinpath(dir_name)
-        if dir_name not in dirs:
-            destination.mkdir()
+    destination = get_destination(path, repository)
     save_the_copy(destination, path)
 
 
-def save_the_copy(destination: Path, file: Path) -> None:
-    if file.is_file():
-        shutil.copy2(file, destination)
+def update_destination(destination: Path, directories_to_copy: tuple[str, ...]) -> Path:
+    for dir_name in directories_to_copy:
+        destination = destination / dir_name
+        if not glob(str(destination)):
+            destination.mkdir()
+    return destination
+
+
+def get_destination(path: Path, repository: Path) -> Path:
+    destination = repository / '.wit' / 'staging_area'
+    directories_to_copy = path.relative_to(repository).parts[:-1]
+    destination = update_destination(destination, directories_to_copy)
+    return destination
+
+
+def save_the_copy(destination: Path, path: Path) -> None:
+    if path.is_file():
+        shutil.copy2(path, destination)
     else:
-        destination_of_folder_if_doesnt_exists = destination.joinpath(file.name)
-        # print(f"destination_of_folder_if_doesnt_exists: {destination_of_folder_if_doesnt_exists}")
-        if destination_of_folder_if_doesnt_exists.exists():
-            shutil.rmtree(destination_of_folder_if_doesnt_exists)
-        shutil.copytree(file, destination_of_folder_if_doesnt_exists)
-
-
-def get_repository_path(path: Path) -> Optional[Path]:
-    if path.is_dir():
-        if '.wit' in os.listdir(path):
-            return path
-    for parent in path.parents:
-        dir_lst = os.listdir(parent)
-        if '.wit' in dir_lst:
-            return parent
-    return None
+        destination_of_folder = destination / path.name
+        if destination_of_folder.exists():
+            shutil.rmtree(destination_of_folder)
+        shutil.copytree(path, destination_of_folder)

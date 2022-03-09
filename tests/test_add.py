@@ -22,7 +22,7 @@ from project import add, init
     ]
 )
 def test_get_directory_with_wit(test_folder, path, parent):
-    init.init(test_folder)
+    init.init_function(test_folder)
     assert add.get_repository_path(path) == parent
 
 
@@ -35,7 +35,7 @@ def test_get_directory_with_wit(test_folder, path, parent):
     ]
 )
 def test_save_the_copy(test_folder, destination_in_wit, file, new_destination):
-    init.init(test_folder)
+    init.init_function(test_folder)
     destination = Path('test_wit').joinpath('.wit', 'staging_area')
     add.save_the_copy(destination.joinpath(destination_in_wit), file)
     assert destination.joinpath(destination_in_wit).exists()
