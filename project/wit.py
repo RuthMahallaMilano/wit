@@ -6,6 +6,7 @@ from checkout import checkout_function
 from commit import commit_function
 from graph import graph_function
 from init import init_function
+from merge import merge_function
 from status import status_function
 
 
@@ -60,6 +61,13 @@ def branch(branch_name):
 def graph():
     """Show graph of commits from current commit to the first."""
     graph_function()
+
+
+@cli.command()
+@click.argument('branch_name')
+def merge(branch_name):
+    """Merge the files in the current commit with the branch."""
+    merge_function(branch_name)
 
 
 if __name__ == "__main__":
