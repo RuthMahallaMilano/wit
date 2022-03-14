@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Union, Iterator
 
 from errors import WitError
-from global_functions import get_repository_path, get_head_reference
+from global_functions import get_repository_path, get_head_reference, get_all_files_in_directory_and_subs
 
 # If I do "add_function" to a file / folder inside folder 1 (test\folder1\folder2\...) -
 # sometimes all other files/ folders inside don't appear in Untracked files.
@@ -34,25 +34,21 @@ def show_files(files: Iterator[str]) -> str:
     return '\n'.join(files)
 
 
-def get_all_files_in_directory_and_subs(directory: Union[Path, str], start_path: Union[Path, str]) -> Iterator[str]:
-    for root, dirs, files in os.walk(directory, topdown=True):
-        if not files and not dirs:
-            yield os.path.relpath(root, start_path)
-        for file in files:
-            file_abs_path = os.path.join(root, file)
-            # print(
-            #     f"***abs path: {file_abs_path}\n"
-            #     f"***start: {start_path}\n"
-            #     f"***rel: {os.path.relpath(file_abs_path, start_path)}"
-            # )
-            yield os.path.relpath(file_abs_path, start_path)
-        for dir_name in dirs:
-            # print(dir_name)
-            yield from get_all_files_in_directory_and_subs(os.path.join(directory, dir_name), start_path)
+# def get_all_files_in_directory_and_subs(directory: Union[Path, str], start_path: Union[Path, str]) -> Iterator[Path]:
+#     for root, dirs, files in os.walk(directory, topdown=True):
+#         if not files and not dirs:
+#             yield Path(root).relative_to(start_path)
+#         for file in files:
+#             file_abs_path = Path(root) / file
+#             yield file_abs_path.relative_to(start_path)
+#         for dir_name in dirs:
+#             yield from get_all_files_in_directory_and_subs(directory / dir_name, start_path)
 
 
 def get_changes_to_be_committed(commit_path: Union[Path, str], staging_area_path: Union[Path, str]) -> Iterator[str]:
-    """Yield files that the user added to staging area since last commit_function and will be added to the next commit_function."""
+    """
+    Yield files that the user added to staging area since last commit_function and will be added
+    to the next commit_function."""
     # sometimes I get the full path of the file and sometimes only the file name.
     cmp = dircmp(commit_path, staging_area_path)
     yield from get_new_and_changed_files(cmp, staging_area_path)
@@ -80,7 +76,7 @@ def get_new_files_added(cmp: dircmp[Union[str, bytes]], dir_path: Union[Path, st
     """Yield files that are new in the directory."""
     new_files_added = cmp.right_only
     for f in new_files_added:
-        f_path = os.path.join(dir_path, f)
+        f_path = Path(dir_path) / f
         if os.path.isfile(f_path):
             yield f if not start_path else os.path.relpath(f_path, start=start_path)
         yield from get_all_files_in_directory_and_subs(f_path, start_path=dir_path if not start_path else start_path)

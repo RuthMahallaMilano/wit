@@ -25,8 +25,10 @@ def update_destination(destination: Path, directories_to_copy: tuple[str, ...]) 
 
 def get_destination(path: Path, repository: Path) -> Path:
     destination = repository / '.wit' / 'staging_area'
-    directories_to_copy = path.relative_to(repository).parts[:-1]
-    destination = update_destination(destination, directories_to_copy)
+    file_path = path.relative_to(repository)
+    file_parts = file_path.parts
+    parents_dirs = file_parts[:-1]
+    destination = update_destination(destination, parents_dirs)
     return destination
 
 
