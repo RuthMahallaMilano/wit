@@ -6,7 +6,6 @@ from errors import FilesDoesntMatchError, WitError, BranchDoesntExistError
 from global_functions import (
     get_repository_path,
     get_commit_id_of_branch,
-    get_head_reference,
     get_all_files_in_directory_and_subs,
 )
 from status import get_changes_to_be_committed, get_changes_not_staged_for_commit
@@ -15,12 +14,10 @@ from status import get_changes_to_be_committed, get_changes_not_staged_for_commi
 def checkout_function(commit_id_or_branch: str) -> None:
     repository = get_repository_path(Path.cwd())
     staging_area_path = repository / '.wit' / 'staging_area'
-    last_commit_id = get_head_reference(repository)
-    last_commit_path = repository / '.wit' / 'images' / last_commit_id
     if not repository:
         raise WitError("<.wit> file not found")
     if (
-        list(get_changes_to_be_committed(last_commit_path, staging_area_path))
+        list(get_changes_to_be_committed(repository, staging_area_path))
         or list(get_changes_not_staged_for_commit(repository, staging_area_path))
     ):
         raise FilesDoesntMatchError("There are files added or changed after last commit_function")
@@ -54,11 +51,12 @@ def update_files_in_main_folder(commit_path: Union[str, Path], repository: Path)
     files_committed = get_all_files_in_directory_and_subs(commit_path)
     for committed_file in files_committed:
         path_in_commit = commit_path / committed_file
-        with open(path_in_commit, 'r') as committed_file_h:
-            content = committed_file_h.read()
-        path_in_repository = repository / committed_file
-        with open(path_in_repository, "w") as original_file:
-            original_file.write(content)
+        if path_in_commit.is_file():
+            with open(path_in_commit, 'r') as committed_file_h:
+                content = committed_file_h.read()
+            path_in_repository = repository / committed_file
+            with open(path_in_repository, "w") as original_file:
+                original_file.write(content)
 
 
 def update_staging_area_folder(staging_area_path: Union[str, Path], commit_path: Union[str, Path]):

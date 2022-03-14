@@ -2,7 +2,7 @@ import os
 from glob import glob
 from pathlib import Path
 import re
-from typing import Optional, Iterator, Union
+from typing import Optional, Iterator
 
 branch_regex = re.compile(r"^(?P<branch_name>\w+)=(?P<branch_id>\w{20})$")
 
@@ -48,17 +48,21 @@ def get_activated_branch(wit_folder: Path) -> str:
     return activated_path.read_text()
 
 
-def get_all_files_in_directory_and_subs(
-        directory: Union[Path, str],
-        start_path: Optional[Union[Path, str]] = None,
-) -> Iterator[Path]:
-    if not start_path:
-        start_path = directory
-    for root, dirs, files in os.walk(directory, topdown=True):
-        if not files and not dirs:
-            yield Path(root).relative_to(start_path)
-        for file in files:
-            file_abs_path = Path(root) / file
-            yield file_abs_path.relative_to(start_path)
-        for dir_name in dirs:
-            yield from get_all_files_in_directory_and_subs(directory / dir_name, start_path)
+def get_all_files_in_directory_and_subs(directory: Path, repo: bool = False) -> Iterator[Path]:
+    if repo:
+        for root, dirs, files in os.walk(directory, topdown=True):
+            if files:
+                for file in files:
+                    if '.wit' not in root:
+                        yield (Path(root) / file).relative_to(directory)
+            else:
+                if '.wit' not in root and not dirs:
+                    yield Path(root).relative_to(directory)
+    else:
+        for root, dirs, files in os.walk(directory, topdown=True):
+            if files:
+                for file in files:
+                    yield (Path(root) / file).relative_to(directory)
+            else:
+                if not dirs:
+                    yield Path(root).relative_to(directory)
