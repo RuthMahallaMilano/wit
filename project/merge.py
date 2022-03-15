@@ -40,33 +40,49 @@ def merge_function(branch_name: str) -> None:
     common_dir = wit_dir / 'images' / common_commit
     branch_dir = wit_dir / 'images' / branch_commit_id
     branch_files, common_files = get_common_and_branch_files(branch_dir, common_dir)
-    check_common_commit_and_update_staging_area(branch_dir, common_dir, common_files, staging_area_path)
-    check_branch_and_update_staging_area(branch_dir, branch_files, common_dir, staging_area_path)
+    check_common_commit_and_update_staging_area_and_repository(
+        branch_dir, common_dir, common_files, staging_area_path, repository
+    )
+    check_branch_and_update_staging_area_and_repository(
+        branch_dir, branch_files, common_dir, staging_area_path, repository
+    )
     commit_merge(branch_commit_id, branch_name, head_reference, wit_dir)
 
 
-def check_branch_and_update_staging_area(
-        branch_dir: Path, branch_files: Iterator[Path], common_dir: Path, staging_area_path: Path
+def check_branch_and_update_staging_area_and_repository(
+        branch_dir: Path,
+        branch_files: Iterator[Path],
+        common_dir: Path,
+        staging_area_path: Path,
+        repository: Path,
 ) -> None:
     for file_path in branch_files:
-        path_in_branch, path_in_common, path_in_staging_area = get_file_path_in_all_dirs(
-            file_path, branch_dir, common_dir, staging_area_path
+        path_in_branch, path_in_common, path_in_staging_area, path_in_repository = (
+            get_file_path_in_all_dirs(file_path, branch_dir, common_dir, staging_area_path, repository)
         )
         if not glob(str(path_in_common)):
-            create_new_file_in_staging_area(file_path, path_in_branch, path_in_staging_area)
+            create_new_file_in_staging_area_and_repository(
+                file_path, path_in_branch, path_in_staging_area, path_in_repository
+            )
 
 
-def check_common_commit_and_update_staging_area(
-        branch_dir: Path, common_dir: Path, common_files: Iterator[Path], staging_area_path: Path
+def check_common_commit_and_update_staging_area_and_repository(
+        branch_dir: Path,
+        common_dir: Path,
+        common_files: Iterator[Path],
+        staging_area_path: Path,
+        repository: Path,
 ) -> None:
     for file_path in common_files:
-        path_in_branch, path_in_common, path_in_staging_area = get_file_path_in_all_dirs(
-            file_path, branch_dir, common_dir, staging_area_path
+        path_in_branch, path_in_common, path_in_staging_area, path_in_repository = (
+            get_file_path_in_all_dirs(file_path, branch_dir, common_dir, staging_area_path, repository)
         )
         if not glob(str(path_in_branch)) or not glob(str(path_in_staging_area)):
             raise NotImplementedError(f"The file {file_path} was deleted. Deleting files not implemented yet.")
         elif file_path.is_file():
-            update_file_in_staging_area(file_path, path_in_branch, path_in_common, path_in_staging_area)
+            update_file_in_staging_area_and_repository(
+                file_path, path_in_branch, path_in_common, path_in_staging_area, path_in_repository
+            )
 
 
 def get_common_and_branch_files(branch_dir: Path, common_dir: Path) -> tuple[Iterator[Path], Iterator[Path]]:
@@ -75,8 +91,12 @@ def get_common_and_branch_files(branch_dir: Path, common_dir: Path) -> tuple[Ite
     return branch_files, common_files
 
 
-def update_file_in_staging_area(
-        file_path: Path, path_in_branch: Path, path_in_common: Path, path_in_staging_area: Path
+def update_file_in_staging_area_and_repository(
+        file_path: Path,
+        path_in_branch: Path,
+        path_in_common: Path,
+        path_in_staging_area: Path,
+        path_in_repository: Path,
 ) -> None:
     content_in_common = path_in_common.read_text()
     content_in_branch = path_in_branch.read_text()
@@ -85,15 +105,21 @@ def update_file_in_staging_area(
         if content_in_common != content_in_staging_area:
             raise NotImplementedError(f"{file_path} was changed in both branches. Not implemented yet.")
         path_in_staging_area.write_text(content_in_branch)
+        path_in_repository.write_text(content_in_branch)
 
 
 def get_file_path_in_all_dirs(
-        file_path: Path, branch_dir: Path, common_dir: Path, staging_area_path: Path
+        file_path: Path,
+        branch_dir: Path,
+        common_dir: Path,
+        staging_area_path: Path,
+        repository: Path,
 ) -> tuple[Path, ...]:
     path_in_common = common_dir / file_path
     path_in_staging_area = staging_area_path / file_path
     path_in_branch = branch_dir / file_path
-    return path_in_branch, path_in_common, path_in_staging_area
+    path_in_repository = repository / file_path
+    return path_in_branch, path_in_common, path_in_staging_area, path_in_repository
 
 
 def commit_merge(branch_commit_id: str, branch_name: str, head_reference: str, wit_dir: Path) -> None:
@@ -102,19 +128,28 @@ def commit_merge(branch_commit_id: str, branch_name: str, head_reference: str, w
     commit_function(message, branch_commit_id)
 
 
-def create_new_file_in_staging_area(file_path: Path, path_in_branch: Path, path_in_staging_area: Path) -> None:
+def create_new_file_in_staging_area_and_repository(
+        file_path: Path,
+        path_in_branch: Path,
+        path_in_staging_area: Path,
+        path_in_repository: Path,
+) -> None:
     if file_path.is_file():
         content_in_branch = path_in_branch.read_text()
         path_in_staging_area.write_text(content_in_branch)
+        path_in_repository.write_text(content_in_branch)
     else:
         os.mkdir(path_in_staging_area)
+        os.mkdir(path_in_repository)
 
 
 def get_common_commit(wit_dir: Path, branch_commit_id: str, head_reference: str) -> str:
     branch_parents = set(get_parents_commits(wit_dir, branch_commit_id))
-    branch_parents.add(branch_commit_id)
     head_parents = set(get_parents_commits(wit_dir, head_reference))
-    head_parents.add(head_reference)
+    if branch_commit_id in head_parents:
+        return branch_commit_id
+    if head_reference in branch_parents:
+        return head_reference
     common = branch_parents.intersection(head_parents)
     if common:
         return common.pop()
