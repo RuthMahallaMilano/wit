@@ -1,8 +1,8 @@
 from pathlib import Path
 
 from commit import get_head_reference
-from errors import WitError, BranchExistsError
-from global_functions import get_repository_path, get_branches_commits
+from errors import BranchExistsError, WitError
+from global_functions import get_branches_commits, get_repository_path
 
 
 def branch_function(name: str) -> None:

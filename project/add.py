@@ -1,6 +1,7 @@
 from glob import glob
 from pathlib import Path
 import shutil
+from typing import Iterator
 
 from errors import WitError
 from global_functions import get_repository_path
@@ -15,7 +16,7 @@ def add_function(path_to_add: str) -> None:
     save_the_copy(destination, path)
 
 
-def update_destination(destination: Path, directories_to_copy: tuple[str, ...]) -> Path:
+def update_destination(destination: Path, directories_to_copy: Iterator[str]) -> Path:
     for dir_name in directories_to_copy:
         destination = destination / dir_name
         if not glob(str(destination)):
@@ -27,7 +28,7 @@ def get_destination(path: Path, repository: Path) -> Path:
     destination = repository / '.wit' / 'staging_area'
     file_path = path.relative_to(repository)
     file_parts = file_path.parts
-    parents_dirs = file_parts[:-1]
+    parents_dirs = (part for part in file_parts if part != file_path.name)
     destination = update_destination(destination, parents_dirs)
     return destination
 

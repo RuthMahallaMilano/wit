@@ -4,11 +4,11 @@ from typing import Union
 
 from errors import FilesDoesntMatchError, WitError, BranchDoesntExistError
 from global_functions import (
-    get_repository_path,
-    get_commit_id_of_branch,
     get_all_files_in_directory_and_subs,
+    get_commit_id_of_branch,
+    get_repository_path,
 )
-from status import get_changes_to_be_committed, get_changes_not_staged_for_commit
+from status import get_changes_not_staged_for_commit, get_changes_to_be_committed
 
 
 def checkout_function(commit_id_or_branch: str) -> None:

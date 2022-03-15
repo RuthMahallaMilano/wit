@@ -7,7 +7,7 @@ import shutil
 from typing import Optional
 
 from errors import WitError
-from global_functions import get_repository_path, get_head_reference, get_activated_branch
+from global_functions import get_activated_branch, get_head_reference, get_repository_path
 
 
 def commit_function(message: str, second_parent: Optional[str] = None) -> None:

@@ -3,10 +3,10 @@ from pathlib import Path
 from typing import Iterator
 
 from errors import WitError
-from global_functions import get_repository_path, get_head_reference, get_all_files_in_directory_and_subs
+from global_functions import get_all_files_in_directory_and_subs, get_head_reference, get_repository_path
 
 
-def status_function():
+def status_function() -> None:
     repository = get_repository_path(Path.cwd())
     if not repository:
         raise WitError("<.wit> file not found")
@@ -71,6 +71,3 @@ def get_untracked_files(repository: Path, staging_area_path: Path) -> Iterator[P
         path_in_staging_area = staging_area_path / file_path
         if not glob(str(path_in_staging_area)):
             yield file_path
-
-
-# TODO: מה קורה אם לא עשו שום קומיט עדיין
