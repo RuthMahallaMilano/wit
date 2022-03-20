@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Union
 
 from errors import BranchDoesntExistError, FilesDoesntMatchError, WitError
-from global_functions import (
+from utils import (
     get_all_files_in_directory_and_subs,
     get_commit_id_of_branch,
     get_repository_path,
@@ -19,9 +19,7 @@ def checkout_function(commit_id_or_branch: str) -> None:
     if list(get_changes_to_be_committed(repository, staging_area_path)) or list(
         get_changes_not_staged_for_commit(repository, staging_area_path)
     ):
-        raise FilesDoesntMatchError(
-            "There are files added or changed after last commit_function"
-        )
+        raise FilesDoesntMatchError("There are files added or changed after last commit_function")
     references_file = repository / ".wit" / "references.txt"
     commit_id = get_commit_id_of_branch(commit_id_or_branch, references_file)
     if not commit_id:

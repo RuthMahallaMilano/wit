@@ -6,7 +6,7 @@ from typing import Iterator
 import flask
 import pytest
 from errors import WitError
-from global_functions import get_repository_path
+from utils import get_repository_path
 
 
 def add_function(path_to_add: str) -> None:

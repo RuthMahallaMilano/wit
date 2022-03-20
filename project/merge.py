@@ -6,7 +6,7 @@ from typing import Iterator
 
 from commit import commit_function
 from errors import FilesDoesntMatchError, MergeError, NoCommonCommitError, WitError
-from global_functions import (
+from utils import (
     get_activated_branch,
     get_all_files_in_directory_and_subs,
     get_commit_id_of_branch,

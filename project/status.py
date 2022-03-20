@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Iterator
 
 from errors import WitError
-from global_functions import (
+from utils import (
     get_all_files_in_directory_and_subs,
     get_head_reference,
     get_repository_path,

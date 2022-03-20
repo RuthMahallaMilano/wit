@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Optional
 
 from errors import WitError
-from global_functions import (
+from utils import (
     get_activated_branch,
     get_head_reference,
     get_repository_path,
