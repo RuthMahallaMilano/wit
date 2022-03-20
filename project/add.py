@@ -1,8 +1,10 @@
+import shutil
 from glob import glob
 from pathlib import Path
-import shutil
 from typing import Iterator
 
+import flask
+import pytest
 from errors import WitError
 from global_functions import get_repository_path
 
@@ -25,7 +27,7 @@ def update_destination(destination: Path, directories_to_copy: Iterator[str]) ->
 
 
 def get_destination(path: Path, repository: Path) -> Path:
-    destination = repository / '.wit' / 'staging_area'
+    destination = repository / ".wit" / "staging_area"
     file_path = path.relative_to(repository)
     file_parts = file_path.parts
     parents_dirs = (part for part in file_parts if part != file_path.name)

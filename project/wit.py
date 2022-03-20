@@ -1,5 +1,4 @@
 import click
-
 from add import add_function
 from branch import branch_function
 from checkout import checkout_function
@@ -22,14 +21,14 @@ def init():
 
 
 @cli.command()
-@click.argument('path', type=click.Path(exists=True))
+@click.argument("path", type=click.Path(exists=True))
 def add(path):
     """Add file or folder to staging area."""
     add_function(path)
 
 
 @cli.command()
-@click.argument('message')
+@click.argument("message")
 def commit(message):
     """Save image of current files in staging area.
     Save a message.
@@ -44,14 +43,14 @@ def status():
 
 
 @cli.command()
-@click.argument('commit_id_or_branch')
+@click.argument("commit_id_or_branch")
 def checkout(commit_id_or_branch):
     """Switch to another commit or branch, which will be activated."""
     checkout_function(commit_id_or_branch)
 
 
 @cli.command()
-@click.argument('branch_name')
+@click.argument("branch_name")
 def branch(branch_name):
     """Create a new branch."""
     branch_function(branch_name)
@@ -64,7 +63,7 @@ def graph():
 
 
 @cli.command()
-@click.argument('branch_name')
+@click.argument("branch_name")
 def merge(branch_name):
     """Merge the files in the current commit with the branch."""
     merge_function(branch_name)
