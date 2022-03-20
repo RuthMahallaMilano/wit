@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from errors import BranchExistsError, WitError
-from utils import get_branches_commits, get_repository_path, get_head_reference
+from utils import get_branches_commits, get_head_reference, get_repository_path
 
 
 def branch_function(name: str) -> None:

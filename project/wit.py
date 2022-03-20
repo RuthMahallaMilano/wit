@@ -1,4 +1,5 @@
 import click
+
 from add import add_function
 from branch import branch_function
 from checkout import checkout_function

@@ -3,8 +3,6 @@ from glob import glob
 from pathlib import Path
 from typing import Iterator
 
-import flask
-import pytest
 from errors import WitError
 from utils import get_repository_path
 

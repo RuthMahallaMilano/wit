@@ -6,6 +6,7 @@ from typing import Iterator
 
 from commit import commit_function
 from errors import FilesDoesntMatchError, MergeError, NoCommonCommitError, WitError
+from status import get_changes_not_staged_for_commit, get_changes_to_be_committed
 from utils import (
     get_activated_branch,
     get_all_files_in_directory_and_subs,
@@ -13,7 +14,6 @@ from utils import (
     get_head_reference,
     get_repository_path,
 )
-from status import get_changes_not_staged_for_commit, get_changes_to_be_committed
 
 regex = re.compile(
     r"^parent = (?P<commit_id_1>\w{20})(, (?P<commit_id_2>\w{20}))?$",

@@ -7,11 +7,7 @@ from pathlib import Path
 from typing import Optional
 
 from errors import WitError
-from utils import (
-    get_activated_branch,
-    get_head_reference,
-    get_repository_path,
-)
+from utils import get_activated_branch, get_head_reference, get_repository_path
 
 
 def commit_function(message: str, second_parent: Optional[str] = None) -> None:

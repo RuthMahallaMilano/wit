@@ -3,12 +3,12 @@ from pathlib import Path
 from typing import Union
 
 from errors import BranchDoesntExistError, FilesDoesntMatchError, WitError
+from status import get_changes_not_staged_for_commit, get_changes_to_be_committed
 from utils import (
     get_all_files_in_directory_and_subs,
     get_commit_id_of_branch,
     get_repository_path,
 )
-from status import get_changes_not_staged_for_commit, get_changes_to_be_committed
 
 
 def checkout_function(commit_id_or_branch: str) -> None:
