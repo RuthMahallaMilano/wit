@@ -20,7 +20,7 @@ def get_repository_path(path: Path) -> Optional[Path]:
 
 
 def get_commit_id_of_branch(branch: str, references_file: Path) -> str:
-    branches_commits_dict = get_existing_branches(references_file)
+    branches_commits_dict = get_branches_commits(references_file)
     if branch in branches_commits_dict:
         return branches_commits_dict[branch]
     if branch in branches_commits_dict.values():
@@ -28,14 +28,14 @@ def get_commit_id_of_branch(branch: str, references_file: Path) -> str:
     return ""
 
 
-def get_existing_branches(references_file: Path) -> set:
+def get_branches_commits(references_file: Path) -> dict[str, str]:
     with references_file.open() as file:
         branches_data = file.read()
-    branches = set()
+    branches_commits = {}
     branch_matches = branch_regex.findall(branches_data)
-    for branch_name, _ in branch_matches:
-        branches.add(branch_name)
-    return branches
+    for branch_name, commit_id in branch_matches:
+        branches_commits[branch_name] = commit_id
+    return branches_commits
 
 
 def get_head_reference(repository: Path) -> str:
