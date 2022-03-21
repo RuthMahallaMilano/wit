@@ -5,24 +5,23 @@ from typing import Union
 from errors import BranchDoesntExistError, FilesDoesntMatchError, WitError
 from status import get_changes_not_staged_for_commit, get_changes_to_be_committed
 from utils import (
+    get_activated_path,
     get_all_files_in_directory_and_subs,
     get_commit_id_of_branch,
+    get_commit_path,
+    get_references_path,
     get_repository_path,
+    get_staging_area,
 )
 
 
 def checkout_function(commit_id_or_branch: str) -> None:
     repository = get_repository_path(Path.cwd())
-    staging_area_path = repository / ".wit" / "staging_area"
+    staging_area_path = get_staging_area(repository)
     if not repository:
         raise WitError("<.wit> file not found")
-    if list(get_changes_to_be_committed(repository, staging_area_path)) or list(
-        get_changes_not_staged_for_commit(repository, staging_area_path)
-    ):
-        raise FilesDoesntMatchError(
-            "There are files added or changed after last commit_function"
-        )
-    references_file = repository / ".wit" / "references.txt"
+    raise_for_unsaved_work(repository)
+    references_file = get_references_path(repository)
     commit_id = get_commit_id_of_branch(commit_id_or_branch, references_file)
     if not commit_id:
         raise BranchDoesntExistError("Branch doesn't exist.")
@@ -30,14 +29,25 @@ def checkout_function(commit_id_or_branch: str) -> None:
         write_activated(commit_id_or_branch, repository)
     else:
         write_activated("", repository)
-    commit_path = repository / ".wit" / "images" / commit_id
+    commit_path = get_commit_path(repository, commit_id)
     update_files_in_main_folder(commit_path, repository)
     update_head_in_references_file(commit_id, references_file)
     update_staging_area_folder(staging_area_path, commit_path)
 
 
+def raise_for_unsaved_work(repository: Path) -> None:
+    files_added_since_last_commit = list(get_changes_to_be_committed(repository))
+    changed_files_since_last_commit = list(
+        get_changes_not_staged_for_commit(repository)
+    )
+    if files_added_since_last_commit or changed_files_since_last_commit:
+        raise FilesDoesntMatchError(
+            "There are files added or changed since last commit_function"
+        )
+
+
 def write_activated(commit_id_or_branch: str, repository: Path) -> None:
-    activated_path = repository / ".wit" / "activated.txt"
+    activated_path = get_activated_path(repository)
     activated_path.write_text(commit_id_or_branch)
 
 
@@ -62,9 +72,7 @@ def update_files_in_main_folder(
                 original_file.write(content)
 
 
-def update_staging_area_folder(
-    staging_area_path: Union[str, Path], commit_path: Union[str, Path]
-):
+def update_staging_area_folder(staging_area_path: Path, commit_path: Path) -> None:
     for file_or_dir in Path(staging_area_path).iterdir():
         if file_or_dir.is_file():
             file_or_dir.unlink()
@@ -73,6 +81,6 @@ def update_staging_area_folder(
     for file in Path(commit_path).iterdir():
         rel_path = Path(file).relative_to(commit_path)
         if file.is_file():
-            shutil.copy2(file, Path(staging_area_path).joinpath(rel_path))
+            shutil.copy2(file, staging_area_path / rel_path)
         else:
-            shutil.copytree(file, Path(staging_area_path).joinpath(rel_path))
+            shutil.copytree(file, staging_area_path / rel_path)

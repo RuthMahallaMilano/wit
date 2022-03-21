@@ -7,48 +7,51 @@ from pathlib import Path
 from typing import Optional
 
 from errors import WitError
-from utils import get_activated_branch, get_head_reference, get_repository_path
+from utils import (
+    get_activated_branch,
+    get_commit_path,
+    get_head_reference,
+    get_references_path,
+    get_repository_path,
+    get_staging_area,
+)
+
+LENGTH = 20
+CHARS = "1234567890abcdef"
 
 
 def commit_function(message: str, second_parent: Optional[str] = None) -> None:
     repository = get_repository_path(Path.cwd())
     if not repository:
         raise WitError("<.wit> file not found")
-    images_path = repository / ".wit" / "images"
-    path_of_new_folder = create_commit_folder(images_path)
-    create_commit_txt_file(
-        repository, images_path, path_of_new_folder, message, second_parent
-    )
-    save_files(repository, path_of_new_folder)
-    commit_id = os.path.basename(path_of_new_folder)
-    write_references(commit_id, repository)
+    new_commit_id = create_commit_id()
+    create_commit_folder(new_commit_id, repository)
+    create_commit_txt_file(repository, new_commit_id, message, second_parent)
+    save_files_in_new_commit(repository, new_commit_id)
+    write_references(new_commit_id, repository)
 
 
-def create_commit_folder(images_path: Path) -> Path:
-    folder_name = create_folder_name()
-    path_of_new_folder = images_path / folder_name
+def create_commit_folder(new_commit_id: str, repository: Path) -> None:
+    path_of_new_folder = get_commit_path(repository, new_commit_id)
     os.mkdir(path_of_new_folder)
-    return path_of_new_folder
 
 
-def create_folder_name() -> str:
-    length = 20
-    chars = "1234567890abcdef"
-    folder_name = "".join(random.choices(chars, k=length))
-    return folder_name
+def create_commit_id() -> str:
+    commit_id = "".join(random.choices(CHARS, k=LENGTH))
+    return commit_id
 
 
 def create_commit_txt_file(
     repository: Path,
-    images_path: Path,
-    path_of_new_folder: Path,
+    new_commit_id: str,
     message: str,
     second_parent: Optional[str] = None,
 ) -> None:
     parent_head = get_head_reference(repository)
     if second_parent:
         parent_head += ", " + second_parent
-    txt_file = images_path / (path_of_new_folder.name + ".txt")
+    new_commit_path = get_commit_path(repository, new_commit_id)
+    txt_file = new_commit_path.with_suffix(".txt")
     txt_file.write_text(
         f"parent = {parent_head if parent_head else None}\n"
         f'date = {datetime.datetime.now().strftime("%c")}\n'
@@ -56,11 +59,12 @@ def create_commit_txt_file(
     )
 
 
-def save_files(repository: Path, path_of_new_folder: Path) -> None:
-    staging_area_path = repository / ".wit" / "staging_area"
-    for item in os.listdir(staging_area_path):
-        src = staging_area_path / item
-        dst = path_of_new_folder / item
+def save_files_in_new_commit(repository: Path, new_commit_id: str) -> None:
+    staging_area_path = get_staging_area(repository)
+    commit_path = get_commit_path(repository, new_commit_id)
+    for item in staging_area_path.iterdir():
+        src = staging_area_path / item.name
+        dst = commit_path / item.name
         if src.is_file():
             shutil.copy2(src, dst)
         else:
@@ -68,27 +72,42 @@ def save_files(repository: Path, path_of_new_folder: Path) -> None:
 
 
 def write_references(commit_id: str, repository: Path) -> None:
-    wit_folder = repository / ".wit"
-    references_file = wit_folder / "references.txt"
+    references_file = get_references_path(repository)
     parent_head = get_head_reference(repository)
-    activated_branch = get_activated_branch(wit_folder)
+    activated_branch = get_activated_branch(repository)
     if references_file.exists():
         change_head_and_branch_id(
             activated_branch, commit_id, parent_head, references_file
         )
     else:
-        references_file.write_text(
-            f'HEAD={commit_id}\n{"=".join((activated_branch, commit_id))}'
-        )
+        change_only_head(activated_branch, commit_id, references_file)
+
+
+def change_only_head(
+    activated_branch: str, commit_id: str, references_file: Path
+) -> None:
+    new_line = "=".join((activated_branch, commit_id))
+    references_file.write_text(f"HEAD={commit_id}\n{new_line}")
 
 
 def change_head_and_branch_id(
     activated_branch: str, commit_id: str, parent_head: str, references_file: Path
 ) -> None:
-    regex = re.compile(rf"^{activated_branch}={parent_head}$", flags=re.MULTILINE)
-    head_regex = re.compile(rf"^HEAD={parent_head}$", flags=re.MULTILINE)
-    data = references_file.read_text()
-    match = regex.findall(data)
-    new = regex.sub(f"{activated_branch}={commit_id}", data) if match else data
-    new = head_regex.sub(f"HEAD={commit_id}", new)
-    references_file.write_text(new)
+    activated_regex = rf"^{activated_branch}={parent_head}$"
+    head_regex = rf"^HEAD={parent_head}$"
+    references_data = references_file.read_text()
+    activated_match = re.findall(activated_regex, references_data, flags=re.MULTILINE)
+    new_references_content = (
+        re.sub(
+            activated_regex,
+            f"{activated_branch}={commit_id}",
+            references_data,
+            flags=re.MULTILINE,
+        )
+        if activated_match
+        else references_data
+    )
+    new_references_content = re.sub(
+        head_regex, f"HEAD={commit_id}", new_references_content, flags=re.MULTILINE
+    )
+    references_file.write_text(new_references_content)

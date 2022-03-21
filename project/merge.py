@@ -4,15 +4,19 @@ from glob import glob
 from pathlib import Path
 from typing import Iterator
 
+from checkout import raise_for_unsaved_work
 from commit import commit_function
-from errors import FilesDoesntMatchError, MergeError, NoCommonCommitError, WitError
-from status import get_changes_not_staged_for_commit, get_changes_to_be_committed
+from errors import MergeError, NoCommonCommitError, WitError
 from utils import (
     get_activated_branch,
     get_all_files_in_directory_and_subs,
     get_commit_id_of_branch,
+    get_commit_path,
     get_head_reference,
+    get_images_path,
+    get_references_path,
     get_repository_path,
+    get_staging_area,
 )
 
 regex = re.compile(
@@ -25,24 +29,18 @@ def merge_function(branch_name: str) -> None:
     repository = get_repository_path(Path.cwd())
     if not repository:
         raise WitError("<.wit> file not found")
-    wit_dir = repository / ".wit"
-    staging_area_path = wit_dir / "staging_area"
-    references_file = wit_dir / "references.txt"
+    staging_area_path = get_staging_area(repository)
+    references_file = get_references_path(repository)
     head_reference = get_head_reference(repository)
     branch_commit_id = get_commit_id_of_branch(branch_name, references_file)
-    if list(get_changes_to_be_committed(repository, staging_area_path)) or list(
-        get_changes_not_staged_for_commit(repository, staging_area_path)
-    ):
-        raise FilesDoesntMatchError(
-            "There are files added or changed after last commit_function"
-        )
+    raise_for_unsaved_work(repository)
     if branch_commit_id == head_reference:
         raise MergeError("Head is already at the branch you are trying to merge.")
-    common_commit = get_common_commit(wit_dir, branch_commit_id, head_reference)
+    common_commit = get_common_commit(repository, branch_commit_id, head_reference)
     if not common_commit:
         raise NoCommonCommitError(f"There is no common commit with {branch_name}.")
-    common_dir = wit_dir / "images" / common_commit
-    branch_dir = wit_dir / "images" / branch_commit_id
+    common_dir = get_commit_path(repository, common_commit)
+    branch_dir = get_commit_path(repository, branch_commit_id)
     branch_files, common_files = get_common_and_branch_files(branch_dir, common_dir)
     check_common_commit_and_update_staging_area_and_repository(
         branch_dir, common_dir, common_files, staging_area_path, repository
@@ -50,7 +48,7 @@ def merge_function(branch_name: str) -> None:
     check_branch_and_update_staging_area_and_repository(
         branch_dir, branch_files, common_dir, staging_area_path, repository
     )
-    commit_merge(branch_commit_id, branch_name, head_reference, wit_dir)
+    commit_merge(branch_commit_id, branch_name, head_reference, repository)
 
 
 def check_branch_and_update_staging_area_and_repository(
@@ -147,9 +145,9 @@ def get_file_path_in_all_dirs(
 
 
 def commit_merge(
-    branch_commit_id: str, branch_name: str, head_reference: str, wit_dir: Path
+    branch_commit_id: str, branch_name: str, head_reference: str, repository: Path
 ) -> None:
-    activated = get_activated_branch(wit_dir)
+    activated = get_activated_branch(repository)
     message = f"Commit after merge of {activated if activated else head_reference} and {branch_name}."
     commit_function(message, branch_commit_id)
 
@@ -169,9 +167,11 @@ def create_new_file_in_staging_area_and_repository(
         os.mkdir(path_in_repository)
 
 
-def get_common_commit(wit_dir: Path, branch_commit_id: str, head_reference: str) -> str:
-    branch_parents = set(get_parents_commits(wit_dir, branch_commit_id))
-    head_parents = set(get_parents_commits(wit_dir, head_reference))
+def get_common_commit(
+    repository: Path, branch_commit_id: str, head_reference: str
+) -> str:
+    branch_parents = set(get_parents_commits(repository, branch_commit_id))
+    head_parents = set(get_parents_commits(repository, head_reference))
     if branch_commit_id in head_parents:
         return branch_commit_id
     if head_reference in branch_parents:
@@ -182,8 +182,8 @@ def get_common_commit(wit_dir: Path, branch_commit_id: str, head_reference: str)
     return ""
 
 
-def get_parents_commits(wit_dir: Path, commit_id: str) -> Iterator[str]:
-    images_path = wit_dir / "images"
+def get_parents_commits(repository: Path, commit_id: str) -> Iterator[str]:
+    images_path = get_images_path(repository)
     yield from get_parents_of_commit_id(commit_id, images_path)
 
 

@@ -1,10 +1,8 @@
 import shutil
-from glob import glob
 from pathlib import Path
-from typing import Iterator
 
 from errors import WitError
-from utils import get_repository_path
+from utils import get_repository_path, get_staging_area
 
 
 def add_function(path_to_add: str) -> None:
@@ -12,32 +10,33 @@ def add_function(path_to_add: str) -> None:
     repository = get_repository_path(path)
     if not repository:
         raise WitError("<.wit> file not found")
-    destination = get_destination(path, repository)
-    save_the_copy(destination, path)
+    copy_to_staging_area(path, repository)
 
 
-def update_destination(destination: Path, directories_to_copy: Iterator[str]) -> Path:
-    for dir_name in directories_to_copy:
-        destination = destination / dir_name
-        if not glob(str(destination)):
-            destination.mkdir()
-    return destination
-
-
-def get_destination(path: Path, repository: Path) -> Path:
-    destination = repository / ".wit" / "staging_area"
-    file_path = path.relative_to(repository)
-    file_parts = file_path.parts
-    parents_dirs = (part for part in file_parts if part != file_path.name)
-    destination = update_destination(destination, parents_dirs)
-    return destination
-
-
-def save_the_copy(destination: Path, path: Path) -> None:
-    if path.is_file():
-        shutil.copy2(path, destination)
+def copy_to_staging_area(path: Path, repository: Path) -> None:
+    staging_area_path = get_staging_area(repository)
+    relative_path = path.relative_to(repository)
+    if path.is_dir():
+        copy_dir_to_staging_area(staging_area_path, path, relative_path)
     else:
-        destination_of_folder = destination / path.name
-        if destination_of_folder.exists():
-            shutil.rmtree(destination_of_folder)
-        shutil.copytree(path, destination_of_folder)
+        copy_file_to_staging_area(staging_area_path, path, relative_path)
+
+
+def copy_file_to_staging_area(
+    staging_area_path: Path, path: Path, relative_path: Path
+) -> None:
+    parents_path = relative_path.parents[0]
+    destination = staging_area_path
+    if parents_path.name:
+        destination = staging_area_path / parents_path
+        destination.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(path, destination)
+
+
+def copy_dir_to_staging_area(
+    staging_area_path: Path, path: Path, relative_path: Path
+) -> None:
+    destination = staging_area_path / relative_path
+    if destination.exists():
+        shutil.rmtree(destination)
+    shutil.copytree(path, destination)
