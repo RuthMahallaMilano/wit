@@ -1,16 +1,18 @@
-import os
 from pathlib import Path
 
 from errors import WitExistsError
+from utils import get_activated_path, get_images_path, get_staging_area, get_wit_dir
 
 
 def init_function() -> None:
-    cwd = os.getcwd()
-    wit_path = os.path.join(cwd, ".wit")
-    if os.path.exists(wit_path):
+    cwd = Path.cwd()
+    wit_path = get_wit_dir(cwd)
+    if wit_path.exists():
         raise WitExistsError("The folder already has .wit directory")
-    os.mkdir(wit_path)
-    os.mkdir(os.path.join(wit_path, "images"))
-    os.mkdir(os.path.join(wit_path, "staging_area"))
-    activated_path = os.path.join(wit_path, "activated.txt")
-    Path(activated_path).write_text("master")
+    wit_path.mkdir()
+    images_path = get_images_path(cwd)
+    images_path.mkdir()
+    staging_area_path = get_staging_area(cwd)
+    staging_area_path.mkdir()
+    activated_path = get_activated_path(cwd)
+    activated_path.write_text("master")
