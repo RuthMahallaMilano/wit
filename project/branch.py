@@ -18,5 +18,6 @@ def branch_function(name: str) -> None:
     if name in existing_branches:
         raise BranchExistsError(f"Branch {name} already exists.")
     commit_id = get_head_reference(repository)
+    # TODO: if no commit was done yet- create references file / raise error
     with references_file.open("a") as ref_file:
         ref_file.write(f"\n{name}={commit_id}")
