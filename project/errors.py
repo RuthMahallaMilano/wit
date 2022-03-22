@@ -2,7 +2,7 @@ class WitError(Exception):
     pass
 
 
-class FilesDoesntMatchError(WitError):
+class FilesDoNotMatchError(WitError):
     pass
 
 

@@ -2,7 +2,7 @@ import shutil
 from pathlib import Path
 from typing import Union
 
-from project.errors import BranchDoesntExistError, FilesDoesntMatchError, WitError
+from project.errors import BranchDoesntExistError, FilesDoNotMatchError, WitError
 from project.status import (
     get_changes_not_staged_for_commit,
     get_changes_to_be_committed,
@@ -20,7 +20,6 @@ from project.utils import (
 
 def checkout_function(commit_id_or_branch: str) -> None:
     repository = get_repository_path(Path.cwd())
-    staging_area_path = get_staging_area(repository)
     if not repository:
         raise WitError("<.wit> file not found")
     raise_for_unsaved_work(repository)
@@ -35,16 +34,17 @@ def checkout_function(commit_id_or_branch: str) -> None:
     commit_path = get_commit_path(repository, commit_id)
     update_files_in_main_folder(commit_path, repository)
     update_head_in_references_file(commit_id, references_file)
+    staging_area_path = get_staging_area(repository)
     update_staging_area_folder(staging_area_path, commit_path)
 
 
 def raise_for_unsaved_work(repository: Path) -> None:
-    files_added_since_last_commit = list(get_changes_to_be_committed(repository))
-    changed_files_since_last_commit = list(
+    files_added_since_last_commit = set(get_changes_to_be_committed(repository))
+    changed_files_since_last_commit = set(
         get_changes_not_staged_for_commit(repository)
     )
     if files_added_since_last_commit or changed_files_since_last_commit:
-        raise FilesDoesntMatchError(
+        raise FilesDoNotMatchError(
             "There are files added or changed since last commit_function"
         )
 
