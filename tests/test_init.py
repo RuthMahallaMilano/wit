@@ -1,11 +1,15 @@
 import os
-import shutil
-from pathlib import Path
+
 import pytest
 
 from project.errors import WitExistsError
 from project.init import init_function
-from project.utils import get_wit_dir, get_images_path, get_staging_area, get_activated_path
+from project.utils import (
+    get_activated_path,
+    get_images_path,
+    get_staging_area,
+    get_wit_dir,
+)
 
 
 def test_wit_dir(test_folder):
@@ -20,4 +24,3 @@ def test_wit_exists(test_folder):
     os.chdir(test_folder)
     with pytest.raises(WitExistsError):
         init_function()
-

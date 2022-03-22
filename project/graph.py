@@ -1,10 +1,16 @@
 import re
 from pathlib import Path
+from typing import Optional
 
 from graphviz import Digraph
 
 from project.errors import WitError
-from project.utils import get_head_reference, get_images_path, get_repository_path, get_wit_dir
+from project.utils import (
+    get_head_reference,
+    get_images_path,
+    get_repository_path,
+    get_wit_dir,
+)
 
 parent_id_regex = re.compile(
     r"^parent = (?P<commit_id_1>\w{20})(, (?P<commit_id_2>\w{20}))?$",
@@ -12,7 +18,7 @@ parent_id_regex = re.compile(
 )
 
 
-def graph_function() -> None:
+def graph_function(test: bool = False) -> Optional[str]:
     repository = get_repository_path(Path.cwd())
     if not repository:
         raise WitError("<.wit> file not found")
@@ -22,7 +28,13 @@ def graph_function() -> None:
     wit_dir = get_wit_dir(repository)
     images_path = get_images_path(repository)
     create_nodes(commit_id, dot, images_path)
-    dot.render(f"Graph {current_commit_id}", wit_dir, view=True, cleanup=True)
+    dot.render(
+        filename=f"Graph_{current_commit_id}",
+        directory=wit_dir,
+        view=True,
+        cleanup=True,
+    )
+    return dot.source if test else None
 
 
 def create_nodes(commit_id: str, dot: Digraph, images_path: Path) -> None:
