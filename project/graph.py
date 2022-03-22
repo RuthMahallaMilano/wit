@@ -3,8 +3,8 @@ from pathlib import Path
 
 from graphviz import Digraph
 
-from errors import WitError
-from utils import get_head_reference, get_images_path, get_repository_path, get_wit_dir
+from project.errors import WitError
+from project.utils import get_head_reference, get_images_path, get_repository_path, get_wit_dir
 
 parent_id_regex = re.compile(
     r"^parent = (?P<commit_id_1>\w{20})(, (?P<commit_id_2>\w{20}))?$",

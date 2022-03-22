@@ -2,8 +2,8 @@ from glob import glob
 from pathlib import Path
 from typing import Iterator
 
-from errors import WitError
-from utils import (
+from project.errors import WitError
+from project.utils import (
     get_all_files_in_directory_and_subs,
     get_all_files_in_repository_and_subs,
     get_commit_path,

@@ -6,8 +6,8 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
-from errors import WitError
-from utils import (
+from project.errors import WitError
+from project.utils import (
     get_activated_branch,
     get_commit_path,
     get_head_reference,

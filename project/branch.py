@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from errors import BranchExistsError, WitError
-from utils import (
+from project.errors import BranchExistsError, WitError
+from project.utils import (
     get_branches_commits,
     get_head_reference,
     get_references_path,

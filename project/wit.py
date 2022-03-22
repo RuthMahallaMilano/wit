@@ -1,13 +1,13 @@
 import click
 
-from add import add_function
-from branch import branch_function
-from checkout import checkout_function
-from commit import commit_function
-from graph import graph_function
-from init import init_function
-from merge import merge_function
-from status import status_function
+from project.add import add_function
+from project.branch import branch_function
+from project.checkout import checkout_function
+from project.commit import commit_function
+from project.graph import graph_function
+from project.init import init_function
+from project.merge import merge_function
+from project.status import status_function
 
 
 @click.group()

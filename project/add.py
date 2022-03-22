@@ -1,8 +1,8 @@
 import shutil
 from pathlib import Path
 
-from errors import WitError
-from utils import get_repository_path, get_staging_area
+from project.errors import WitError
+from project.utils import get_repository_path, get_staging_area
 
 
 def add_function(path_to_add: str) -> None:

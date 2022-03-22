@@ -2,9 +2,9 @@ import shutil
 from pathlib import Path
 from typing import Union
 
-from errors import BranchDoesntExistError, FilesDoesntMatchError, WitError
-from status import get_changes_not_staged_for_commit, get_changes_to_be_committed
-from utils import (
+from project.errors import BranchDoesntExistError, FilesDoesntMatchError, WitError
+from project.status import get_changes_not_staged_for_commit, get_changes_to_be_committed
+from project.utils import (
     get_activated_path,
     get_all_files_in_directory_and_subs,
     get_commit_id_of_branch,

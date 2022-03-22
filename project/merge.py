@@ -4,10 +4,10 @@ from glob import glob
 from pathlib import Path
 from typing import Iterator
 
-from checkout import raise_for_unsaved_work
-from commit import commit_function
-from errors import MergeError, NoCommonCommitError, WitError
-from utils import (
+from project.checkout import raise_for_unsaved_work
+from project.commit import commit_function
+from project.errors import MergeError, NoCommonCommitError, WitError
+from project.utils import (
     get_activated_branch,
     get_all_files_in_directory_and_subs,
     get_commit_id_of_branch,

@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from errors import WitExistsError
-from utils import get_activated_path, get_images_path, get_staging_area, get_wit_dir
+from project.errors import WitExistsError
+from project.utils import get_activated_path, get_images_path, get_staging_area, get_wit_dir
 
 
 def init_function() -> None:
