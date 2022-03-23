@@ -6,7 +6,7 @@ from typing import Iterator
 
 from project.checkout import raise_for_unsaved_work
 from project.commit import commit_function
-from project.errors import MergeError, NoCommonCommitError, WitError
+from project.errors import MergeError, WitError
 from project.utils import (
     get_activated_branch,
     get_all_files_in_directory_and_subs,

@@ -7,8 +7,8 @@ from project.branch import branch_function
 from project.checkout import checkout_function
 from project.commit import commit_function
 from project.errors import WitError, BranchDoesntExistError, FilesDoNotMatchError
-from project.utils import get_activated_branch, get_commit_id_of_branch, get_references_path, get_activated_path, \
-    get_head_reference
+from project.utils import get_activated_branch, get_head_reference
+from tests.conftest import change_add_and_commit_file
 
 
 def test_raise_wit_error(tmp_path):
@@ -49,22 +49,12 @@ def test_checkout_function(test_folder):
 
 
 def test_checkout_id(test_folder):
-    add_and_commit_file1(test_folder)
+    file1 = test_folder / "file1.txt"
+    change_add_and_commit_file(file1, "")
     test_id = get_head_reference(test_folder)
-    add_and_commit_file2(test_folder)
+    file2 = test_folder / "folder1" / "file2.txt"
+    change_add_and_commit_file(file2, "")
     checkout_function(test_id)
     activated_branch = get_activated_branch(test_folder)
     assert not activated_branch
     checkout_function("master")
-
-
-def add_and_commit_file2(test_folder):
-    file2 = test_folder / "folder1" / "file2.txt"
-    add_function(file2)
-    commit_function(file2)
-
-
-def add_and_commit_file1(test_folder):
-    file1 = test_folder / "file1.txt"
-    add_function(file1)
-    commit_function("")

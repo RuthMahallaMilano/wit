@@ -2,6 +2,8 @@ import os
 
 import pytest
 
+from project.add import add_function
+from project.commit import commit_function
 from project.init import init_function
 
 
@@ -16,3 +18,9 @@ def test_folder(tmp_path_factory):
     os.chdir(test_folder)
     init_function()
     return test_folder
+
+
+def change_add_and_commit_file(file_path, txt):
+    file_path.write_text(txt)
+    add_function(file_path)
+    commit_function("")
