@@ -6,7 +6,7 @@ from project.add import add_function
 from project.branch import branch_function
 from project.checkout import checkout_function
 from project.commit import commit_function
-from project.errors import WitError, BranchDoesntExistError, FilesDoNotMatchError
+from project.errors import BranchDoesntExistError, FilesDoNotMatchError, WitError
 from project.utils import get_activated_branch, get_head_reference
 from tests.conftest import change_add_and_commit_file
 

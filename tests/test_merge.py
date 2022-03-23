@@ -6,9 +6,9 @@ from project.add import add_function
 from project.branch import branch_function
 from project.checkout import checkout_function
 from project.commit import commit_function
-from project.utils import get_staging_area, get_all_files_in_repository_and_subs
-from project.errors import WitError, MergeError
+from project.errors import MergeError, WitError
 from project.merge import merge_function
+from project.utils import get_all_files_in_repository_and_subs, get_staging_area
 from tests.conftest import change_add_and_commit_file
 
 
@@ -48,7 +48,7 @@ def test_merge_function(test_folder):
     merge_function("master")
     staging_area_path = get_staging_area(test_folder)
     file1_in_staging_area = staging_area_path / "file1.txt"
-    new_in_staging_area = staging_area_path / "folder1" / 'new.txt'
+    new_in_staging_area = staging_area_path / "folder1" / "new.txt"
     assert file1.read_text() == "merge"
     assert file1_in_staging_area.read_text() == "merge"
     assert new.read_text() == "new"
@@ -65,6 +65,6 @@ def reset_files_in_repo(test_folder):
 
 
 def add_new_file_and_commit(folder):
-    new = folder / 'new.txt'
+    new = folder / "new.txt"
     change_add_and_commit_file(new, "new")
     return new

@@ -24,7 +24,9 @@ def checkout_function(commit_id_or_branch: str) -> None:
         raise WitError("<.wit> file not found")
     raise_for_unsaved_work(repository)
     references_file = get_references_path(repository)
-    commit_id = get_commit_id_of_branch(repository, commit_id_or_branch, references_file)
+    commit_id = get_commit_id_of_branch(
+        repository, commit_id_or_branch, references_file
+    )
     if not commit_id:
         raise BranchDoesntExistError("Branch doesn't exist.")
     if commit_id != commit_id_or_branch:
@@ -40,9 +42,7 @@ def checkout_function(commit_id_or_branch: str) -> None:
 
 def raise_for_unsaved_work(repository: Path) -> None:
     files_added_since_last_commit = set(get_changes_to_be_committed(repository))
-    changed_files_since_last_commit = set(
-        get_changes_not_staged_for_commit(repository)
-    )
+    changed_files_since_last_commit = set(get_changes_not_staged_for_commit(repository))
     if files_added_since_last_commit or changed_files_since_last_commit:
         raise FilesDoNotMatchError(
             "There are files added or changed since last commit_function"

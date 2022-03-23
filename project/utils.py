@@ -19,7 +19,9 @@ def get_repository_path(path: Path) -> Optional[Path]:
     return None
 
 
-def get_commit_id_of_branch(repository: Path, branch: str, references_file: Path) -> str:
+def get_commit_id_of_branch(
+    repository: Path, branch: str, references_file: Path
+) -> str:
     branches_commits_dict = get_branches_commits(references_file)
     if branch in branches_commits_dict:
         return branches_commits_dict[branch]

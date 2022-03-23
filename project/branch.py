@@ -21,4 +21,3 @@ def branch_function(name: str) -> None:
         commit_id = get_head_reference(repository)
         with references_file.open("a") as ref_file:
             ref_file.write(f"\n{name}={commit_id}")
-

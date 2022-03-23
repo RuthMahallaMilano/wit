@@ -3,8 +3,8 @@ import os
 import pytest
 
 from project.branch import branch_function
-from project.errors import WitError, BranchExistsError
-from project.utils import get_references_path, get_head_reference
+from project.errors import BranchExistsError, WitError
+from project.utils import get_head_reference, get_references_path
 from tests.conftest import change_add_and_commit_file
 
 

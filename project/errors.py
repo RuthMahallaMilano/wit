@@ -20,4 +20,3 @@ class WitExistsError(WitError):
 
 class MergeError(WitError):
     pass
-

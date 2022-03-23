@@ -31,7 +31,11 @@ def status_function() -> tuple[Iterator[Path], Iterator[Path], Iterator[Path]]:
         f"###Untracked files:###\n{untracked_files}\n"
     )
     print(output)
-    return get_changes_to_be_committed(repository), get_changes_not_staged_for_commit(repository), get_untracked_files(repository)
+    return (
+        get_changes_to_be_committed(repository),
+        get_changes_not_staged_for_commit(repository),
+        get_untracked_files(repository),
+    )
 
 
 def show_files(files: Iterator[Path]) -> str:

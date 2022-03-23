@@ -8,11 +8,12 @@ from project.checkout import checkout_function
 from project.commit import commit_function
 from project.errors import WitError
 from project.graph import graph_function
-from project.merge import merge_function, get_parents_commits
+from project.merge import get_parents_commits, merge_function
 from project.utils import (
+    get_commit_id_of_branch,
     get_head_reference,
     get_references_path,
-    get_wit_dir, get_commit_id_of_branch,
+    get_wit_dir,
 )
 
 
@@ -33,7 +34,9 @@ def test_graph_function(test_folder):
     dot_source = graph_function()
     current_commit_id = get_head_reference(test_folder)
     wit_dir = get_wit_dir(test_folder)
-    commits_in_graph = get_commits_in_graph(branch_commit_id, current_commit_id, test_folder)
+    commits_in_graph = get_commits_in_graph(
+        branch_commit_id, current_commit_id, test_folder
+    )
     assert wit_dir / f"Graph_{current_commit_id}.pdf" in set(wit_dir.iterdir())
     for commit in commits_in_graph:
         assert commit in dot_source
