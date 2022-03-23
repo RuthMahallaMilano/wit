@@ -18,7 +18,7 @@ parent_id_regex = re.compile(
 )
 
 
-def graph_function(test: bool = False) -> Optional[str]:
+def graph_function() -> Optional[str]:
     repository = get_repository_path(Path.cwd())
     if not repository:
         raise WitError("<.wit> file not found")
@@ -34,7 +34,7 @@ def graph_function(test: bool = False) -> Optional[str]:
         view=True,
         cleanup=True,
     )
-    return dot.source if test else None
+    return dot.source
 
 
 def create_nodes(commit_id: str, dot: Digraph, images_path: Path) -> None:

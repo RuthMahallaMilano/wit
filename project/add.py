@@ -1,11 +1,12 @@
 import shutil
 from pathlib import Path
+from typing import Union
 
 from project.errors import WitError
 from project.utils import get_repository_path, get_staging_area
 
 
-def add_function(path_to_add: str) -> None:
+def add_function(path_to_add: Union[str, Path]) -> None:
     path = Path(path_to_add).resolve()
     repository = get_repository_path(path)
     if not repository:

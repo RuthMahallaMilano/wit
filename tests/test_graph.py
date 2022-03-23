@@ -30,7 +30,7 @@ def test_graph_function(test_folder):
     checkout_function("master")
     branch_commit_id = get_commit_id_of_branch(test_folder, "branch1", references_file)
     merge_function("branch1")
-    dot_source = graph_function(test=True)
+    dot_source = graph_function()
     current_commit_id = get_head_reference(test_folder)
     wit_dir = get_wit_dir(test_folder)
     commits_in_graph = get_commits_in_graph(branch_commit_id, current_commit_id, test_folder)
