@@ -16,7 +16,7 @@ from project.utils import (
 )
 
 
-def test_raise_error(tmp_path, test_folder):
+def test_raise_wit_error(tmp_path, test_folder):
     os.chdir(tmp_path)
     with pytest.raises(WitError):
         graph_function()

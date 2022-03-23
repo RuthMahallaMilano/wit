@@ -9,7 +9,7 @@ from project.errors import WitError, BranchExistsError
 from project.utils import get_references_path, get_head_reference, get_wit_dir
 
 
-def test_raise_error(tmp_path):
+def test_raise_wit_error(tmp_path):
     os.chdir(tmp_path)
     with pytest.raises(WitError):
         branch_function("")

@@ -21,6 +21,3 @@ class WitExistsError(WitError):
 class MergeError(WitError):
     pass
 
-
-class NoCommonCommitError(WitError):
-    pass

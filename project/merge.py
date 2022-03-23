@@ -37,8 +37,6 @@ def merge_function(branch_name: str) -> None:
     branch_commit_id = get_commit_id_of_branch(repository, branch_name, references_file)
     raise_for_unsaved_work(repository)
     common_commit = get_common_commit(repository, branch_commit_id, head_reference)
-    if not common_commit:
-        raise NoCommonCommitError(f"There is no common commit with {branch_name}.")
     common_dir = get_commit_path(repository, common_commit)
     branch_dir = get_commit_path(repository, branch_commit_id)
     branch_files, common_files = get_common_and_branch_files(branch_dir, common_dir)

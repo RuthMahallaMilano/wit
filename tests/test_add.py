@@ -7,7 +7,7 @@ from project.errors import WitError
 from project.utils import get_staging_area
 
 
-def test_raise_error(tmp_path):
+def test_raise_wit_error(tmp_path):
     os.chdir(tmp_path)
     test_file = tmp_path / "test.txt"
     test_file.write_text("")

@@ -12,7 +12,7 @@ from project.utils import (
 )
 
 
-def test_raise_error(tmp_path):
+def test_raise_wit_error(tmp_path):
     os.chdir(tmp_path)
     with pytest.raises(WitError):
         commit_function("")
