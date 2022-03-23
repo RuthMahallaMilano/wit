@@ -29,13 +29,13 @@ def merge_function(branch_name: str) -> None:
     repository = get_repository_path(Path.cwd())
     if not repository:
         raise WitError("<.wit> file not found")
-    staging_area_path = get_staging_area(repository)
+    activated = get_activated_branch(repository)
+    if branch_name == activated:
+        raise MergeError("Head is already at the branch you are trying to merge.")
     references_file = get_references_path(repository)
     head_reference = get_head_reference(repository)
     branch_commit_id = get_commit_id_of_branch(repository, branch_name, references_file)
     raise_for_unsaved_work(repository)
-    if branch_commit_id == head_reference:
-        raise MergeError("Head is already at the branch you are trying to merge.")
     common_commit = get_common_commit(repository, branch_commit_id, head_reference)
     if not common_commit:
         raise NoCommonCommitError(f"There is no common commit with {branch_name}.")
@@ -43,10 +43,10 @@ def merge_function(branch_name: str) -> None:
     branch_dir = get_commit_path(repository, branch_commit_id)
     branch_files, common_files = get_common_and_branch_files(branch_dir, common_dir)
     check_common_commit_and_update_staging_area_and_repository(
-        branch_dir, common_dir, common_files, staging_area_path, repository
+        branch_dir, common_dir, common_files, repository
     )
     check_branch_and_update_staging_area_and_repository(
-        branch_dir, branch_files, common_dir, staging_area_path, repository
+        branch_dir, branch_files, common_dir, repository
     )
     commit_merge(branch_commit_id, branch_name, head_reference, repository)
 
@@ -55,9 +55,9 @@ def check_branch_and_update_staging_area_and_repository(
     branch_dir: Path,
     branch_files: Iterator[Path],
     common_dir: Path,
-    staging_area_path: Path,
     repository: Path,
 ) -> None:
+    staging_area_path = get_staging_area(repository)
     for file_path in branch_files:
         (
             path_in_branch,
@@ -77,9 +77,9 @@ def check_common_commit_and_update_staging_area_and_repository(
     branch_dir: Path,
     common_dir: Path,
     common_files: Iterator[Path],
-    staging_area_path: Path,
     repository: Path,
 ) -> None:
+    staging_area_path = get_staging_area(repository)
     for file_path in common_files:
         (
             path_in_branch,
