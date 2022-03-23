@@ -24,7 +24,7 @@ def checkout_function(commit_id_or_branch: str) -> None:
         raise WitError("<.wit> file not found")
     raise_for_unsaved_work(repository)
     references_file = get_references_path(repository)
-    commit_id = get_commit_id_of_branch(commit_id_or_branch, references_file)
+    commit_id = get_commit_id_of_branch(repository, commit_id_or_branch, references_file)
     if not commit_id:
         raise BranchDoesntExistError("Branch doesn't exist.")
     if commit_id != commit_id_or_branch:

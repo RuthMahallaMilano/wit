@@ -1,5 +1,4 @@
 import os
-import random
 
 import pytest
 
@@ -24,7 +23,7 @@ def test_raise_branch_doesnt_exist_error(test_folder):
     with pytest.raises(BranchDoesntExistError):
         checkout_function("branch")
 
-# checkout id
+
 def test_raise_files_do_not_match_error_changed(test_folder):
     branch_function("branch")
     checkout_function("branch")
@@ -50,14 +49,22 @@ def test_checkout_function(test_folder):
 
 
 def test_checkout_id(test_folder):
-    file1 = test_folder / "file1.txt"
-    add_function(file1)
-    commit_function("")
+    add_and_commit_file1(test_folder)
     test_id = get_head_reference(test_folder)
-    file2 = test_folder / "folder1" / "file2.txt"
-    add_function(file2)
-    commit_function(file2)
+    add_and_commit_file2(test_folder)
     checkout_function(test_id)
     activated_branch = get_activated_branch(test_folder)
     assert not activated_branch
     checkout_function("master")
+
+
+def add_and_commit_file2(test_folder):
+    file2 = test_folder / "folder1" / "file2.txt"
+    add_function(file2)
+    commit_function(file2)
+
+
+def add_and_commit_file1(test_folder):
+    file1 = test_folder / "file1.txt"
+    add_function(file1)
+    commit_function("")

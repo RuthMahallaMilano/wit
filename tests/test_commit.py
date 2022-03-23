@@ -31,5 +31,5 @@ def test_second_commit(test_folder):
     commit_function("test second commit")
     references_path = get_references_path(test_folder)
     assert get_head_reference(test_folder) == get_commit_id_of_branch(
-        "master", references_path
+        test_folder, "master", references_path
     )

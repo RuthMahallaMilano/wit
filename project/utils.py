@@ -19,13 +19,20 @@ def get_repository_path(path: Path) -> Optional[Path]:
     return None
 
 
-def get_commit_id_of_branch(branch: str, references_file: Path) -> str:
+def get_commit_id_of_branch(repository: Path, branch: str, references_file: Path) -> str:
     branches_commits_dict = get_branches_commits(references_file)
     if branch in branches_commits_dict:
         return branches_commits_dict[branch]
-    if branch in branches_commits_dict.values():
+    if branch in list(get_all_commits(repository)):
         return branch
     return ""
+
+
+def get_all_commits(repository: Path) -> Iterator[str]:
+    images_path = get_images_path(repository)
+    for file_name in images_path.iterdir():
+        if file_name.is_dir():
+            yield file_name.name
 
 
 def get_branches_commits(references_file: Path) -> dict[str, str]:
@@ -41,7 +48,7 @@ def get_branches_commits(references_file: Path) -> dict[str, str]:
 def get_head_reference(repository: Path) -> str:
     references_file = get_references_path(repository)
     if references_file.exists():
-        return get_commit_id_of_branch("HEAD", references_file)
+        return get_commit_id_of_branch(repository, "HEAD", references_file)
     return ""
 
 

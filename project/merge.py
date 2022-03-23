@@ -32,7 +32,7 @@ def merge_function(branch_name: str) -> None:
     staging_area_path = get_staging_area(repository)
     references_file = get_references_path(repository)
     head_reference = get_head_reference(repository)
-    branch_commit_id = get_commit_id_of_branch(branch_name, references_file)
+    branch_commit_id = get_commit_id_of_branch(repository, branch_name, references_file)
     raise_for_unsaved_work(repository)
     if branch_commit_id == head_reference:
         raise MergeError("Head is already at the branch you are trying to merge.")
