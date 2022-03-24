@@ -20,7 +20,7 @@ LENGTH = 20
 CHARS = "1234567890abcdef"
 
 
-def commit_function(message: str, second_parent: Optional[str] = None) -> None:
+def commit_function(message: str, second_parent: Optional[str] = None) -> str:
     repository = get_repository_path(Path.cwd())
     if not repository:
         raise WitError("<.wit> file not found")
@@ -29,6 +29,7 @@ def commit_function(message: str, second_parent: Optional[str] = None) -> None:
     create_commit_txt_file(repository, new_commit_id, message, second_parent)
     save_files_in_new_commit(repository, new_commit_id)
     write_references(new_commit_id, repository)
+    return new_commit_id
 
 
 def create_commit_folder(new_commit_id: str, repository: Path) -> None:
