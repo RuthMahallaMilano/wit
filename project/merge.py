@@ -158,6 +158,9 @@ def create_new_file_in_staging_area_and_repository(
 ) -> None:
     if file_path.is_file():
         content_in_branch = path_in_branch.read_text()
+        file_parent = path_in_staging_area.parent
+        if not file_parent.exists():
+            file_parent.mkdir(parents=True)
         path_in_staging_area.write_text(content_in_branch)
         path_in_repository.write_text(content_in_branch)
     else:

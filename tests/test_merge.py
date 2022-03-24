@@ -59,8 +59,8 @@ def test_merge_function2(test_folder, file1, file3):
     checkout_function("master")
     merge_function("branch1")
     staging_area_path = get_staging_area(test_folder)
-    file1_in_staging_area = staging_area_path / "file1.txt"
-    file3_in_staging_area = staging_area_path / "folder2" / "file3.txt"
+    file1_in_staging_area = staging_area_path / file1.relative_to(test_folder)
+    file3_in_staging_area = staging_area_path / file3.relative_to(test_folder)
     assert file1.read_text() == ""
     assert file1_in_staging_area.read_text() == ""
     assert file3.read_text() == "1"
