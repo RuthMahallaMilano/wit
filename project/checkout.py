@@ -67,12 +67,14 @@ def update_files_in_main_folder(
     files_committed = get_all_files_in_directory_and_subs(commit_path)
     for committed_file in files_committed:
         path_in_commit = commit_path / committed_file
-        if path_in_commit.is_file():
-            with open(path_in_commit, "r") as committed_file_h:
-                content = committed_file_h.read()
-            path_in_repository = repository / committed_file
-            with open(path_in_repository, "w") as original_file:
-                original_file.write(content)
+        path_in_repository = repository / committed_file
+        update_file_in_repository(path_in_commit, path_in_repository)
+
+
+def update_file_in_repository(path_in_commit: Path, path_in_repository: Path) -> None:
+    if path_in_commit.is_file():
+        content = path_in_commit.read_text()
+        path_in_repository.write_text(content)
 
 
 def update_staging_area_folder(staging_area_path: Path, commit_path: Path) -> None:

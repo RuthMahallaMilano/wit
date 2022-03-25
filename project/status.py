@@ -1,6 +1,6 @@
 from glob import glob
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Optional
 
 from project.errors import WitError
 from project.utils import (
@@ -45,13 +45,12 @@ def show_files(files: Iterator[Path]) -> str:
     return txt
 
 
-def get_changes_to_be_committed(repository: Path) -> Iterator[Path]:
+def get_changes_to_be_committed(repository: Path) -> Optional[Iterator[Path]]:
     staging_area_path = get_staging_area(repository)
     last_commit_id = get_head_reference(repository)
     files_in_staging_area = get_all_files_in_directory_and_subs(staging_area_path)
     if not last_commit_id:
-        for file_path in files_in_staging_area:
-            yield file_path
+        return None
     else:
         commit_path = get_commit_path(repository, last_commit_id)
         for file_path in files_in_staging_area:

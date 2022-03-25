@@ -1,4 +1,3 @@
-import os
 import re
 from glob import glob
 from pathlib import Path
@@ -164,8 +163,8 @@ def create_new_file_in_staging_area_and_repository(
         path_in_staging_area.write_text(content_in_branch)
         path_in_repository.write_text(content_in_branch)
     else:
-        os.mkdir(path_in_staging_area)
-        os.mkdir(path_in_repository)
+        path_in_staging_area.mkdir(parents=True, exist_ok=True)
+        path_in_repository.mkdir(parents=True, exist_ok=True)
 
 
 def get_common_commit(

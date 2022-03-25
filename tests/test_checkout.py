@@ -7,7 +7,11 @@ from project.branch import branch_function
 from project.checkout import checkout_function
 from project.errors import BranchDoesntExistError, FilesDoNotMatchError, WitError
 from project.utils import get_activated_branch, get_head_reference
-from tests.conftest import change_add_and_commit_file
+from tests.conftest import (
+    add_new_file_and_commit,
+    change_add_and_commit_file,
+    get_file_path_in_staging_area,
+)
 
 
 def test_raise_wit_error(tmp_path):
@@ -56,3 +60,13 @@ def test_checkout_id(test_folder, file1, file2):
     checkout_function(test_id)
     activated_branch = get_activated_branch(test_folder)
     assert not activated_branch
+
+
+def test_add_new_file_and_checkout(test_folder, file1, file2):
+    change_add_and_commit_file(file1, "")
+    branch_function("branch")
+    checkout_function("branch")
+    new = add_new_file_and_commit(test_folder)
+    checkout_function("master")
+    new_in_staging_area = get_file_path_in_staging_area(new, test_folder)
+    assert not new_in_staging_area.exists()

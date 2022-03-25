@@ -2,12 +2,17 @@ import os
 
 import pytest
 
+from project.add import add_function
 from project.branch import branch_function
 from project.checkout import checkout_function
+from project.commit import commit_function
 from project.errors import MergeError, WitError
 from project.merge import merge_function
-from project.utils import get_staging_area
-from tests.conftest import change_add_and_commit_file
+from tests.conftest import (
+    add_new_file_and_commit,
+    change_add_and_commit_file,
+    get_file_path_in_staging_area,
+)
 
 
 def test_raise_wit_error(tmp_path):
@@ -42,13 +47,12 @@ def test_merge_function(test_folder, file1, folder1):
     change_add_and_commit_file(file1, "merge")
     checkout_function("TestMerge")
     merge_function("master")
-    staging_area_path = get_staging_area(test_folder)
-    file1_in_staging_area = staging_area_path / "file1.txt"
-    new_in_staging_area = staging_area_path / "folder1" / "new.txt"
+    file1_in_staging_area = get_file_path_in_staging_area(file1, test_folder)
+    new_in_staging_area = get_file_path_in_staging_area(new, test_folder)
     assert file1.read_text() == "merge"
     assert file1_in_staging_area.read_text() == "merge"
-    assert new.read_text() == "new"
-    assert new_in_staging_area.read_text() == "new"
+    assert new.read_text() == "file_path"
+    assert new_in_staging_area.read_text() == "file_path"
 
 
 def test_merge_function2(test_folder, file1, file3):
@@ -58,16 +62,53 @@ def test_merge_function2(test_folder, file1, file3):
     change_add_and_commit_file(file3, "1")
     checkout_function("master")
     merge_function("branch1")
-    staging_area_path = get_staging_area(test_folder)
-    file1_in_staging_area = staging_area_path / file1.relative_to(test_folder)
-    file3_in_staging_area = staging_area_path / file3.relative_to(test_folder)
+    file1_in_staging_area = get_file_path_in_staging_area(file1, test_folder)
+    file3_in_staging_area = get_file_path_in_staging_area(file3, test_folder)
     assert file1.read_text() == ""
     assert file1_in_staging_area.read_text() == ""
     assert file3.read_text() == "1"
     assert file3_in_staging_area.read_text() == "1"
 
 
-def add_new_file_and_commit(folder):
-    new = folder / "new.txt"
-    change_add_and_commit_file(new, "new")
-    return new
+def test_raise_deleted_file_error(test_folder, file1, file2):
+    change_add_and_commit_file(file1, "")
+    branch_function("TestMerge")
+    checkout_function("TestMerge")
+    file2.unlink()
+    checkout_function("master")
+    with pytest.raises(NotImplementedError):
+        merge_function("TestMerge")
+
+
+def test_create_file_and_merge(test_folder, file1):
+    change_add_and_commit_file(file1, "")
+    branch_function("TestMerge")
+    checkout_function("TestMerge")
+    new = add_new_file_and_commit(test_folder)
+    checkout_function("master")
+    merge_function("TestMerge")
+    new_in_staging_area = get_file_path_in_staging_area(new, test_folder)
+    assert new_in_staging_area.read_text() == "file_path"
+
+
+def test_merge_master(test_folder, file1, file2):
+    change_add_and_commit_file(file1, "")
+    branch_function("TestMerge")
+    checkout_function("TestMerge")
+    change_add_and_commit_file(file2, "1")
+    merge_function("master")
+
+
+def test_create_folder_and_merge(test_folder, file1):
+    change_add_and_commit_file(file1, "")
+    branch_function("TestMerge")
+    checkout_function("TestMerge")
+    new = test_folder / "file_path"
+    new.mkdir()
+    add_function(new)
+    commit_function("")
+    checkout_function("master")
+    merge_function("TestMerge")
+    new_in_staging_area = get_file_path_in_staging_area(new, test_folder)
+    assert new_in_staging_area.exists()
+    assert new.exists()
