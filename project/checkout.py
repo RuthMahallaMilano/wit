@@ -29,10 +29,8 @@ def checkout_function(commit_id_or_branch: str) -> None:
     )
     if not commit_id:
         raise BranchDoesntExistError("Branch doesn't exist.")
-    if commit_id != commit_id_or_branch:
-        write_activated(commit_id_or_branch, repository)
-    else:
-        write_activated("", repository)
+    checkout_to = commit_id_or_branch if commit_id != commit_id_or_branch else ""
+    write_activated(checkout_to, repository)
     commit_path = get_commit_path(repository, commit_id)
     update_files_in_main_folder(commit_path, repository)
     update_head_in_references_file(commit_id, references_file)
