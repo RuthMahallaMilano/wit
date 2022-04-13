@@ -5,7 +5,14 @@ from pathlib import Path
 from typing import Iterator, Optional
 
 branch_regex = re.compile(
-    r"^(?P<branch_name>\w+)=(?P<branch_id>\w{20})$", flags=re.MULTILINE
+BRANCH_REGEX = re.compile(
+    r"^"
+    r"(?P<branch_name>\w+)"
+    r"="
+    r"(?P<branch_id>[0-9a-fA-F]{20})"
+    r"$",
+    flags=re.MULTILINE,
+)
 )
 
 
