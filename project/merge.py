@@ -18,6 +18,7 @@ from project.utils import (
     raise_for_unsaved_work,
 )
 
+
 Paths = namedtuple("Paths", ["branch", "common", "staging_area", "repository"])
 
 

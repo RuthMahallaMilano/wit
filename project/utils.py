@@ -1,18 +1,26 @@
 import os
 import re
 from pathlib import Path
-from typing import Any, Iterator, Optional
+from typing import Iterator, Optional
 
 from project.errors import FilesDoNotMatchError
 
+
 BRANCH_REGEX = re.compile(
-    r"^" r"(?P<branch_name>\w+)" r"=" r"(?P<branch_id>\w{20})" r"$",
+    r"^"
+    r"(?P<branch_name>\w+)" 
+    r"=" 
+    r"(?P<branch_id>\w{20})" 
+    r"$",
     flags=re.MULTILINE,
 )
 
 
 PARENT_ID_REGEX = re.compile(
-    r"^parent = " r"(?P<commit_id_1>\w{20})" r"(, (?P<commit_id_2>\w{20}))" r"?$",
+    r"^parent = " 
+    r"(?P<commit_id_1>\w{20})" 
+    r"(, (?P<commit_id_2>\w{20}))" 
+    r"?$",
     flags=re.MULTILINE,
 )
 

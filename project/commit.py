@@ -55,7 +55,7 @@ def create_commit_txt_file(
     txt_file = new_commit_path.with_suffix(".txt")
     txt_file.write_text(
         f"parent = {parent_head if parent_head else None}\n"
-        f'date = {datetime.datetime.now().strftime("%c")}\n'
+        f"date = {datetime.datetime.now().strftime('%c')}\n"
         f"message = {message}"
     )
 

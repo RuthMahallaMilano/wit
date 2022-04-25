@@ -13,7 +13,7 @@ def init_function() -> None:
     cwd = Path.cwd()
     wit_path = get_wit_path(cwd)
     if wit_path.exists():
-        raise WitExistsError("The folder already has .wit directory")
+        raise WitExistsError("The folder is already a wit directory.")
     wit_path.mkdir()
     images_path = get_images_path(cwd)
     images_path.mkdir()
