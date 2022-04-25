@@ -1,4 +1,3 @@
-import re
 from pathlib import Path
 from typing import Optional
 
@@ -6,15 +5,11 @@ from graphviz import Digraph
 
 from project.errors import WitError
 from project.utils import (
+    PARENT_ID_REGEX,
     get_head_reference,
     get_images_path,
     get_repository_path,
-    get_wit_dir,
-)
-
-parent_id_regex = re.compile(
-    r"^parent = (?P<commit_id_1>\w{20})(, (?P<commit_id_2>\w{20}))?$",
-    flags=re.MULTILINE,
+    get_wit_path,
 )
 
 
@@ -25,7 +20,7 @@ def graph_function() -> Optional[str]:
     current_commit_id = get_head_reference(repository)
     commit_id = current_commit_id
     dot = init_graph()
-    wit_dir = get_wit_dir(repository)
+    wit_dir = get_wit_path(repository)
     images_path = get_images_path(repository)
     create_nodes(commit_id, dot, images_path)
     dot.render(
@@ -42,7 +37,7 @@ def create_nodes(commit_id: str, dot: Digraph, images_path: Path) -> None:
         commit_file = images_path / (commit_id + ".txt")
         create_node(commit_id, dot)
         commit_txt = commit_file.read_text()
-        parent_id_match = parent_id_regex.match(commit_txt)
+        parent_id_match = PARENT_ID_REGEX.match(commit_txt)
         if parent_id_match:
             parent_id_1 = parent_id_match.group("commit_id_1")
             parent_id_2 = parent_id_match.group("commit_id_2")

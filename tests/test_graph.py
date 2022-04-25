@@ -11,7 +11,7 @@ from project.utils import (
     get_commit_id_of_branch,
     get_head_reference,
     get_references_path,
-    get_wit_dir,
+    get_wit_path,
 )
 from tests.conftest import change_add_and_commit_file
 
@@ -34,7 +34,7 @@ def test_graph_function(test_folder, file1, file3):
     branch_commit_id = get_commit_id_of_branch(test_folder, "branch1", references_file)
     dot_source = graph_function()
     current_commit_id = get_head_reference(test_folder)
-    wit_dir = get_wit_dir(test_folder)
+    wit_dir = get_wit_path(test_folder)
     commits_in_graph = get_commits_in_graph(
         branch_commit_id, current_commit_id, test_folder
     )

@@ -5,7 +5,7 @@ import pytest
 from project.add import add_function
 from project.commit import commit_function
 from project.init import init_function
-from project.utils import get_staging_area
+from project.utils import get_staging_area_path
 
 
 @pytest.fixture()
@@ -67,6 +67,6 @@ def add_new_file_and_commit(folder):
 
 
 def get_file_path_in_staging_area(file_path, folder):
-    staging_area = get_staging_area(folder)
+    staging_area = get_staging_area_path(folder)
     path_in_staging_area = staging_area / file_path.relative_to(folder)
     return path_in_staging_area

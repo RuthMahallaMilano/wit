@@ -13,7 +13,7 @@ from project.utils import (
     get_head_reference,
     get_references_path,
     get_repository_path,
-    get_staging_area,
+    get_staging_area_path,
 )
 
 LENGTH = 20
@@ -61,7 +61,7 @@ def create_commit_txt_file(
 
 
 def save_files_in_new_commit(repository: Path, new_commit_id: str) -> None:
-    staging_area_path = get_staging_area(repository)
+    staging_area_path = get_staging_area_path(repository)
     commit_path = get_commit_path(repository, new_commit_id)
     for item in staging_area_path.iterdir():
         src = staging_area_path / item.name
@@ -98,17 +98,14 @@ def change_head_and_branch_id(
     head_regex = rf"^HEAD={parent_head}$"
     references_data = references_file.read_text()
     activated_match = re.findall(activated_regex, references_data, flags=re.MULTILINE)
-    new_references_content = (
-        re.sub(
+    if activated_match:
+        references_data = re.sub(
             activated_regex,
             f"{activated_branch}={commit_id}",
             references_data,
             flags=re.MULTILINE,
         )
-        if activated_match
-        else references_data
-    )
     new_references_content = re.sub(
-        head_regex, f"HEAD={commit_id}", new_references_content, flags=re.MULTILINE
+        head_regex, f"HEAD={commit_id}", references_data, flags=re.MULTILINE
     )
     references_file.write_text(new_references_content)

@@ -7,16 +7,16 @@ from project.init import init_function
 from project.utils import (
     get_activated_path,
     get_images_path,
-    get_staging_area,
-    get_wit_dir,
+    get_staging_area_path,
+    get_wit_path,
 )
 
 
 def test_wit_dir(test_folder):
-    wit_path = get_wit_dir(test_folder)
+    wit_path = get_wit_path(test_folder)
     assert wit_path.is_dir()
     assert get_images_path(test_folder).is_dir()
-    assert get_staging_area(test_folder).is_dir()
+    assert get_staging_area_path(test_folder).is_dir()
     assert get_activated_path(test_folder).read_text() == "master"
 
 

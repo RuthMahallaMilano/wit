@@ -1,28 +1,38 @@
 import os
 import re
-from glob import glob
 from pathlib import Path
-from typing import Iterator, Optional
+from typing import Any, Iterator, Optional
 
-branch_regex = re.compile(
-    r"^(?P<branch_name>\w+)=(?P<branch_id>\w{20})$", flags=re.MULTILINE
+from project.errors import FilesDoNotMatchError
+
+BRANCH_REGEX = re.compile(
+    r"^" r"(?P<branch_name>\w+)" r"=" r"(?P<branch_id>\w{20})" r"$",
+    flags=re.MULTILINE,
+)
+
+
+PARENT_ID_REGEX = re.compile(
+    r"^parent = " r"(?P<commit_id_1>\w{20})" r"(, (?P<commit_id_2>\w{20}))" r"?$",
+    flags=re.MULTILINE,
 )
 
 
 def get_repository_path(path: Path) -> Optional[Path]:
     if path.is_dir():
-        if glob(str(path / ".wit")):
+        if set(path.glob(".wit")):
             return path
     for directory in path.parents:
-        if glob(str(directory / ".wit")):
+        if set(directory.glob(".wit")):
             return directory
     return None
 
 
 def get_commit_id_of_branch(
-    repository: Path, branch: str, references_file: Path
+    repository: Path,
+    branch: str,
+    references_file: Path,
 ) -> str:
-    branches_commits_dict = get_branches_commits(references_file)
+    branches_commits_dict = get_commits_by_branches(references_file)
     if branch in branches_commits_dict:
         return branches_commits_dict[branch]
     if branch in list(get_all_commits(repository)):
@@ -37,14 +47,11 @@ def get_all_commits(repository: Path) -> Iterator[str]:
             yield file_name.name
 
 
-def get_branches_commits(references_file: Path) -> dict[str, str]:
+def get_commits_by_branches(references_file: Path) -> dict[str, str]:
     with references_file.open() as file:
         branches_data = file.read()
-    branches_commits = {}
-    branch_matches = branch_regex.findall(branches_data)
-    for branch_name, commit_id in branch_matches:
-        branches_commits[branch_name] = commit_id
-    return branches_commits
+    branch_matches = BRANCH_REGEX.findall(branches_data)
+    return dict(branch_matches)
 
 
 def get_head_reference(repository: Path) -> str:
@@ -80,25 +87,63 @@ def get_all_files_in_repository_and_subs(repository: Path) -> Iterator[Path]:
                 yield Path(root).relative_to(repository)
 
 
-def get_wit_dir(repository: Path) -> Path:
+def get_wit_path(repository: Path) -> Path:
     return repository / ".wit"
 
 
-def get_staging_area(repository: Path) -> Path:
-    return get_wit_dir(repository) / "staging_area"
+def get_staging_area_path(repository: Path) -> Path:
+    return get_wit_path(repository) / "staging_area"
 
 
 def get_references_path(repository: Path) -> Path:
-    return get_wit_dir(repository) / "references.txt"
+    return get_wit_path(repository) / "references.txt"
 
 
 def get_images_path(repository: Path) -> Path:
-    return get_wit_dir(repository) / "images"
+    return get_wit_path(repository) / "images"
 
 
-def get_commit_path(repository: Path, commit_id: str):
+def get_commit_path(repository: Path, commit_id: str) -> Path:
     return get_images_path(repository) / commit_id
 
 
 def get_activated_path(repository: Path) -> Path:
-    return get_wit_dir(repository) / "activated.txt"
+    return get_wit_path(repository) / "activated.txt"
+
+
+def check_if_file_changed(file_path: Path, dir_1: Path, dir_2: Path) -> bool:
+    content_in_dir_1 = (dir_1 / file_path).read_text()
+    content_in_dir_2 = (dir_2 / file_path).read_text()
+    return content_in_dir_1 != content_in_dir_2
+
+
+def get_changes_to_be_committed(repository: Path) -> Optional[Iterator[Path]]:
+    staging_area_path = get_staging_area_path(repository)
+    last_commit_id = get_head_reference(repository)
+    files_in_staging_area = get_all_files_in_directory_and_subs(staging_area_path)
+    if not last_commit_id:
+        return None
+    commit_path = get_commit_path(repository, last_commit_id)
+    for file_path in files_in_staging_area:
+        files_in_last_commit_that_match_file_path = commit_path.glob(str(file_path))
+        if not set(files_in_last_commit_that_match_file_path):
+            yield file_path
+        elif file_path.is_file():
+            if check_if_file_changed(file_path, staging_area_path, commit_path):
+                yield file_path
+
+
+def get_changes_not_staged_for_commit(repository: Path) -> Optional[Iterator[Path]]:
+    staging_area_path = get_staging_area_path(repository)
+    files_in_staging_area = get_all_files_in_directory_and_subs(staging_area_path)
+    for file_path in files_in_staging_area:
+        if file_path.is_file():
+            if check_if_file_changed(file_path, staging_area_path, repository):
+                yield file_path
+
+
+def raise_for_unsaved_work(repository: Path) -> None:
+    files_added_since_last_commit = set(get_changes_to_be_committed(repository))
+    changed_files_since_last_commit = set(get_changes_not_staged_for_commit(repository))
+    if files_added_since_last_commit or changed_files_since_last_commit:
+        raise FilesDoNotMatchError("There are files added or changed since last commit")

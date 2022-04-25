@@ -3,7 +3,7 @@ import os
 import pytest
 
 from project.branch import branch_function
-from project.errors import BranchExistsError, WitError
+from project.errors import BranchExistsError, BranchNotCreatedError, WitError
 from project.utils import get_head_reference, get_references_path
 from tests.conftest import change_add_and_commit_file
 
@@ -28,3 +28,8 @@ def test_branch_exists_error(test_folder, file2):
     branch_function("TestBranch")
     with pytest.raises(BranchExistsError):
         branch_function("TestBranch")
+
+
+def test_branch_not_created_error(test_folder):
+    with pytest.raises(BranchNotCreatedError):
+        branch_function("branch")

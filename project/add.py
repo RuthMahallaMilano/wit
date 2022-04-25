@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Union
 
 from project.errors import WitError
-from project.utils import get_repository_path, get_staging_area
+from project.utils import get_repository_path, get_staging_area_path
 
 
 def add_function(path_to_add: Union[str, Path]) -> None:
@@ -15,7 +15,7 @@ def add_function(path_to_add: Union[str, Path]) -> None:
 
 
 def copy_to_staging_area(path: Path, repository: Path) -> None:
-    staging_area_path = get_staging_area(repository)
+    staging_area_path = get_staging_area_path(repository)
     relative_path = path.relative_to(repository)
     if path.is_dir():
         copy_dir_to_staging_area(staging_area_path, path, relative_path)

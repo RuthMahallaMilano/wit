@@ -20,3 +20,7 @@ class WitExistsError(WitError):
 
 class MergeError(WitError):
     pass
+
+
+class BranchNotCreatedError(WitError):
+    pass

@@ -1,12 +1,11 @@
-import re
-from glob import glob
+from collections import namedtuple
 from pathlib import Path
 from typing import Iterator
 
-from project.checkout import raise_for_unsaved_work
 from project.commit import commit_function
 from project.errors import MergeError, WitError
 from project.utils import (
+    PARENT_ID_REGEX,
     get_activated_branch,
     get_all_files_in_directory_and_subs,
     get_commit_id_of_branch,
@@ -15,13 +14,11 @@ from project.utils import (
     get_images_path,
     get_references_path,
     get_repository_path,
-    get_staging_area,
+    get_staging_area_path,
+    raise_for_unsaved_work,
 )
 
-regex = re.compile(
-    r"^parent = (?P<commit_id_1>\w{20})(, (?P<commit_id_2>\w{20}))?$",
-    flags=re.MULTILINE,
-)
+Paths = namedtuple("Paths", ["branch", "common", "staging_area", "repository"])
 
 
 def merge_function(branch_name: str) -> None:
@@ -35,139 +32,118 @@ def merge_function(branch_name: str) -> None:
     head_reference = get_head_reference(repository)
     branch_commit_id = get_commit_id_of_branch(repository, branch_name, references_file)
     raise_for_unsaved_work(repository)
-    common_commit = get_common_commit(repository, branch_commit_id, head_reference)
-    common_dir = get_commit_path(repository, common_commit)
-    branch_dir = get_commit_path(repository, branch_commit_id)
-    branch_files, common_files = get_common_and_branch_files(branch_dir, common_dir)
+    common_commit_id = get_common_commit_id(
+        repository,
+        branch_commit_id,
+        head_reference,
+    )
+    common_commit_path = get_commit_path(repository, common_commit_id)
+    branch_path = get_commit_path(repository, branch_commit_id)
+    staging_area_path = get_staging_area_path(repository)
     check_common_commit_and_update_staging_area_and_repository(
-        branch_dir, common_dir, common_files, repository
+        branch_path,
+        common_commit_path,
+        repository,
+        staging_area_path,
     )
     check_branch_and_update_staging_area_and_repository(
-        branch_dir, branch_files, common_dir, repository
+        branch_path,
+        common_commit_path,
+        repository,
+        staging_area_path,
     )
     commit_merge(branch_commit_id, branch_name, head_reference, repository)
 
 
 def check_branch_and_update_staging_area_and_repository(
-    branch_dir: Path,
-    branch_files: Iterator[Path],
-    common_dir: Path,
+    branch_path: Path,
+    common_commit_path: Path,
     repository: Path,
+    staging_area_path: Path,
 ) -> None:
-    staging_area_path = get_staging_area(repository)
+    branch_files = get_all_files_in_directory_and_subs(branch_path)
     for file_path in branch_files:
-        (
-            path_in_branch,
-            path_in_common,
-            path_in_staging_area,
-            path_in_repository,
-        ) = get_file_path_in_all_dirs(
-            file_path, branch_dir, common_dir, staging_area_path, repository
+        paths = Paths(
+            branch_path / file_path,
+            common_commit_path / file_path,
+            staging_area_path / file_path,
+            repository / file_path,
         )
-        if not glob(str(path_in_common)):
-            create_new_file_in_staging_area_and_repository(
-                file_path, path_in_branch, path_in_staging_area, path_in_repository
-            )
+        files_in_common_that_match_file = common_commit_path.glob(str(file_path))
+        if not set(files_in_common_that_match_file):
+            create_new_file_in_staging_area_and_repository(file_path, paths)
+
+
+def create_new_file_in_staging_area_and_repository(
+    file_path: Path, paths: Paths
+) -> None:
+    if file_path.is_file():
+        content_in_branch = paths.branch.read_text()
+        file_parent = paths.staging_area.parent
+        if not file_parent.exists():
+            file_parent.mkdir(parents=True)
+        paths.staging_area.write_text(content_in_branch)
+        paths.repository.write_text(content_in_branch)
+    else:
+        paths.staging_area.mkdir(parents=True, exist_ok=True)
+        paths.repository.mkdir(parents=True, exist_ok=True)
 
 
 def check_common_commit_and_update_staging_area_and_repository(
-    branch_dir: Path,
-    common_dir: Path,
-    common_files: Iterator[Path],
+    branch_path: Path,
+    common_commit_path: Path,
     repository: Path,
+    staging_area_path: Path,
 ) -> None:
-    staging_area_path = get_staging_area(repository)
+    common_files = get_all_files_in_directory_and_subs(common_commit_path)
     for file_path in common_files:
-        (
-            path_in_branch,
-            path_in_common,
-            path_in_staging_area,
-            path_in_repository,
-        ) = get_file_path_in_all_dirs(
-            file_path, branch_dir, common_dir, staging_area_path, repository
-        )
-        if not glob(str(path_in_branch)) or not glob(str(path_in_staging_area)):
+        if check_if_file_was_deleted(file_path, branch_path, staging_area_path):
             raise NotImplementedError(
                 f"The file {file_path} was deleted. Deleting files not implemented yet."
             )
-        elif file_path.is_file():
-            update_file_in_staging_area_and_repository(
-                file_path,
-                path_in_branch,
-                path_in_common,
-                path_in_staging_area,
-                path_in_repository,
+        if file_path.is_file():
+            paths = Paths(
+                branch_path / file_path,
+                common_commit_path / file_path,
+                staging_area_path / file_path,
+                repository / file_path,
             )
+            update_file_in_staging_area_and_repository(file_path, paths)
 
 
-def get_common_and_branch_files(
-    branch_dir: Path, common_dir: Path
-) -> tuple[Iterator[Path], Iterator[Path]]:
-    common_files = get_all_files_in_directory_and_subs(common_dir)
-    branch_files = get_all_files_in_directory_and_subs(branch_dir)
-    return branch_files, common_files
+def check_if_file_was_deleted(
+    file_path: Path, branch_path: Path, staging_area_path: Path
+) -> bool:
+    files_in_branch_that_match_file = branch_path.glob(str(file_path))
+    deleted_in_branch = not set(files_in_branch_that_match_file)
+    files_in_staging_area_that_match_file = staging_area_path.glob(str(file_path))
+    deleted_in_current = not set(files_in_staging_area_that_match_file)
+    return deleted_in_branch or deleted_in_current
 
 
-def update_file_in_staging_area_and_repository(
-    file_path: Path,
-    path_in_branch: Path,
-    path_in_common: Path,
-    path_in_staging_area: Path,
-    path_in_repository: Path,
-) -> None:
-    content_in_common = path_in_common.read_text()
-    content_in_branch = path_in_branch.read_text()
-    content_in_staging_area = path_in_staging_area.read_text()
+def update_file_in_staging_area_and_repository(file_path: Path, paths: Paths) -> None:
+    content_in_common = paths.common.read_text()
+    content_in_branch = paths.branch.read_text()
+    content_in_staging_area = paths.staging_area.read_text()
     if content_in_common != content_in_branch:
         if content_in_common != content_in_staging_area:
             raise NotImplementedError(
                 f"{file_path} was changed in both branches. Not implemented yet."
             )
-        path_in_staging_area.write_text(content_in_branch)
-        path_in_repository.write_text(content_in_branch)
-
-
-def get_file_path_in_all_dirs(
-    file_path: Path,
-    branch_dir: Path,
-    common_dir: Path,
-    staging_area_path: Path,
-    repository: Path,
-) -> tuple[Path, ...]:
-    path_in_common = common_dir / file_path
-    path_in_staging_area = staging_area_path / file_path
-    path_in_branch = branch_dir / file_path
-    path_in_repository = repository / file_path
-    return path_in_branch, path_in_common, path_in_staging_area, path_in_repository
+        paths.staging_area.write_text(content_in_branch)
+        paths.repository.write_text(content_in_branch)
 
 
 def commit_merge(
     branch_commit_id: str, branch_name: str, head_reference: str, repository: Path
 ) -> None:
     activated = get_activated_branch(repository)
-    message = f"Commit after merge of {activated if activated else head_reference} and {branch_name}."
+    current_branch = activated if activated else head_reference
+    message = f"Commit after merge of {current_branch} and {branch_name}."
     commit_function(message, branch_commit_id)
 
 
-def create_new_file_in_staging_area_and_repository(
-    file_path: Path,
-    path_in_branch: Path,
-    path_in_staging_area: Path,
-    path_in_repository: Path,
-) -> None:
-    if file_path.is_file():
-        content_in_branch = path_in_branch.read_text()
-        file_parent = path_in_staging_area.parent
-        if not file_parent.exists():
-            file_parent.mkdir(parents=True)
-        path_in_staging_area.write_text(content_in_branch)
-        path_in_repository.write_text(content_in_branch)
-    else:
-        path_in_staging_area.mkdir(parents=True, exist_ok=True)
-        path_in_repository.mkdir(parents=True, exist_ok=True)
-
-
-def get_common_commit(
+def get_common_commit_id(
     repository: Path, branch_commit_id: str, head_reference: str
 ) -> str:
     branch_parents = set(get_parents_commits(repository, branch_commit_id))
@@ -191,7 +167,7 @@ def get_parents_of_commit_id(commit_id: str, images_path: Path) -> Iterator[str]
     while commit_id:
         commit_file = images_path / (commit_id + ".txt")
         commit_txt = commit_file.read_text()
-        parent_id_match = regex.match(commit_txt)
+        parent_id_match = PARENT_ID_REGEX.match(commit_txt)
         if parent_id_match:
             parent_id_1 = parent_id_match.group("commit_id_1")
             parent_id_2 = parent_id_match.group("commit_id_2")
