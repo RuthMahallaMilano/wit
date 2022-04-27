@@ -2,7 +2,7 @@
 
 Wit is a program that allows you to create backups of text files and folders, similar to Git.
 
-In order to run the software, the following steps must be performed:
+In order to run Wit, the following steps must be performed:
 1. git clone the repo
 2. create a vitrual environnment
 3. install the requirements fron requirenents.txt file
