@@ -2,7 +2,7 @@
 
 Wit is a version control system that simulates Git's behavior, which includes commands such as add, branch, commit, status, and checkout. I also implemented a basic merge and graph, which is a kind of graphical log.
 
-In order to run Wit, the follow the next steps:
+In order to run Wit, follow the next steps:
 1. git clone the repo
 2. create a vitrual environnment
 3. install the requirements fron requirenents.txt file
